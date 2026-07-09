@@ -148,6 +148,28 @@ def test_plain_bob_minor_extent_needs_singles():
     assert calling.count("s") % 2 == 0  # singles are odd permutations
 
 
+def test_cambridge_surprise_minor_course():
+    cam = rings.METHODS["Cambridge Surprise Minor"]
+    rows = rings.course(cam)
+    assert len(rows) - 1 == 120  # 5 leads of 24
+    assert rings.is_true(rows)
+    assert rings.row_str(rows[24]) == "156342"  # lead head per CompLib
+    # the treble dodges: 1-2 up, 3-4 up, 5-6 up, 5-6 down, 3-4 down, 1-2 down
+    path = [row.index(1) + 1 for row in rows[:25]]
+    assert path == [1, 2, 1, 2, 3, 4, 3, 4, 5, 6, 5, 6,
+                    6, 5, 6, 5, 4, 3, 4, 3, 2, 1, 2, 1, 1]
+
+
+def test_cambridge_has_bobs_only_extents():
+    # Unlike Plain Bob Minor, Cambridge admits bobs-only 720s (the full
+    # search finds exactly 400 in ~50s; here we just take the first,
+    # which is a tidy three-part).
+    cam = rings.METHODS["Cambridge Surprise Minor"]
+    found = rings.search_extents(cam, "pb", limit=1)
+    assert found == ["ppppbppbpb" * 3]
+    assert rings.is_extent(rings.touch(cam, found[0]))
+
+
 def test_stedman_doubles_course():
     st = rings.METHODS["Stedman Doubles"]
     rows = rings.course(st)

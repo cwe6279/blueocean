@@ -160,6 +160,12 @@ METHODS = {
         Method("Plain Bob Minor", "x16x16x16,12", 6, {"b": "14", "s": "1234"}),
         Method("Grandsire Doubles", "3,1.5.1.5.1", 5, {"b": "3.1", "s": "3.123"}),
         Method(
+            "Cambridge Surprise Minor",
+            "x36x14x12x36x14x56,12",
+            6,
+            {"b": "14", "s": "1234"},
+        ),
+        Method(
             "Stedman Doubles",
             ["3.1.5.3.1.3", "1.3.5.1.3.1"],
             5,
