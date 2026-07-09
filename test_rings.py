@@ -109,6 +109,45 @@ def test_grandsire_extent_needs_singles():
         assert calling.count("s") in (2, 6)
 
 
+def test_plain_bob_leadheads_form_cyclic_group():
+    # The lead heads of a Plain Bob plain course are the powers of the
+    # first lead head: a cyclic group (order 5 on six bells).
+    rows = rings.course(rings.METHODS["Plain Bob Minor"])
+    heads = [rows[i] for i in range(0, len(rows), 12)]
+    g = heads[1]
+    h = rings.rounds(6)
+    powers = []
+    for _ in range(5):
+        powers.append(h)
+        h = tuple(g[x - 1] for x in h)
+    assert h == rings.rounds(6)  # g has order 5
+    assert heads == powers + [rings.rounds(6)]
+
+
+def test_plain_bob_minimus_unique_extent():
+    # On four bells the plain course is already the extent, and no other
+    # calling gives one: calls cannot help at Minimus.
+    pb = rings.METHODS["Plain Bob Minimus"]
+    assert rings.search_extents(pb, "pbs") == ["ppp"]
+
+
+def test_no_bobs_only_extent_of_plain_bob_minor():
+    # The classical result that a 720 of Plain Bob Minor cannot be rung
+    # with bobs alone (Q-set parity), confirmed by exhaustive search.
+    pb = rings.METHODS["Plain Bob Minor"]
+    assert rings.search_extents(pb, "pb") == []
+
+
+def test_plain_bob_minor_extent_needs_singles():
+    pb = rings.METHODS["Plain Bob Minor"]
+    found = rings.search_extents(pb, "pbs", limit=1)
+    assert len(found) == 1
+    calling = found[0]
+    assert len(calling) == 60  # 60 leads of 12
+    assert rings.is_extent(rings.touch(pb, calling))
+    assert calling.count("s") % 2 == 0  # singles are odd permutations
+
+
 def test_stedman_doubles_course():
     st = rings.METHODS["Stedman Doubles"]
     rows = rings.course(st)
