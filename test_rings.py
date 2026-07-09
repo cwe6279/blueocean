@@ -64,6 +64,51 @@ def test_treble_hunts_in_plain_bob():
     assert places == [1, 2, 3, 4, 4, 3, 2, 1, 1]
 
 
+def test_call_replaces_lead_end():
+    pb = rings.METHODS["Plain Bob Doubles"]
+    assert pb.lead_changes("p")[-1] == (1, 2, 5)
+    assert pb.lead_changes("b")[-1] == (1, 4, 5)
+    assert pb.lead_changes("s")[-1] == (1, 2, 3)
+    # Grandsire's calls replace the last TWO changes: 5.1 -> 3.1 or 3.123
+    g = rings.METHODS["Grandsire Doubles"]
+    assert g.lead_changes("p")[-2:] == [(5,), (1,)]
+    assert g.lead_changes("b")[-2:] == [(3,), (1,)]
+    assert g.lead_changes("s")[-2:] == [(3,), (1, 2, 3)]
+
+
+def test_standard_120_of_plain_bob_doubles():
+    pb = rings.METHODS["Plain Bob Doubles"]
+    rows = rings.touch(pb, "pppb" * 3)
+    assert rows[-1] == (1, 2, 3, 4, 5)
+    assert rings.is_extent(rows)
+
+
+def test_bobs_only_extents_of_plain_bob_doubles():
+    # The only bobs-only extents are the four rotations of PPPB x3
+    pb = rings.METHODS["Plain Bob Doubles"]
+    found = rings.search_extents(pb, "pb")
+    assert sorted(found) == sorted(
+        ["pppbpppbpppb", "ppbpppbpppbp", "pbpppbpppbpp", "bpppbpppbppp"]
+    )
+
+
+def test_thompson_no_bobs_only_grandsire_extent():
+    # W. H. Thompson proved (1886) that no extent of Grandsire Doubles
+    # can be rung with bobs alone. Exhaustive search agrees.
+    g = rings.METHODS["Grandsire Doubles"]
+    assert rings.search_extents(g, "pb") == []
+
+
+def test_grandsire_extent_needs_singles():
+    g = rings.METHODS["Grandsire Doubles"]
+    found = rings.search_extents(g, "pbs")
+    assert len(found) == 10
+    for calling in found:
+        assert rings.is_extent(rings.touch(g, calling))
+        # singles are odd permutations, so an even nonzero number is needed
+        assert calling.count("s") in (2, 6)
+
+
 def test_falseness_detected():
     # Repeating a whole extent must be false
     rows = rings.plain_course("x14x14,12", 4)

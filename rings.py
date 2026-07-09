@@ -117,6 +117,89 @@ def lead(row, changes):
         yield row
 
 
+class Method:
+    """A named method: place notation plus its standard calls.
+
+    A call is itself a scrap of place notation that replaces the same
+    number of changes at the *end* of a lead. E.g. a Plain Bob bob '14'
+    replaces the lead-end '12'; a Grandsire bob '3.1' replaces '5.1'.
+    """
+
+    def __init__(self, name, notation, stage, calls=None):
+        self.name = name
+        self.notation = notation
+        self.stage = stage
+        self.changes = parse(notation)
+        self.calls = {k: parse(v) for k, v in (calls or {}).items()}
+
+    def lead_changes(self, call="p"):
+        if call == "p":
+            return self.changes
+        tail = self.calls[call]
+        return self.changes[: -len(tail)] + tail
+
+
+METHODS = {
+    m.name: m
+    for m in [
+        Method("Plain Bob Minimus", "x14x14,12", 4, {"b": "14", "s": "1234"}),
+        Method("Plain Bob Doubles", "5.1.5.1.5,125", 5, {"b": "145", "s": "123"}),
+        Method("Plain Bob Minor", "x16x16x16,12", 6, {"b": "14", "s": "1234"}),
+        Method("Grandsire Doubles", "3,1.5.1.5.1", 5, {"b": "3.1", "s": "3.123"}),
+    ]
+}
+
+
+def find_method(name):
+    for m in METHODS.values():
+        if m.name.lower() == name.lower():
+            return m
+    return None
+
+
+def touch(method, calling):
+    """Ring one lead per character of `calling`: 'p' plain, 'b' bob,
+    's' single. Returns the rows rung, starting from rounds."""
+    row = rounds(method.stage)
+    rows = [row]
+    for call in calling.replace(" ", "").lower():
+        for r in lead(row, method.lead_changes(call)):
+            rows.append(r)
+        row = rows[-1]
+    return rows
+
+
+def search_extents(method, calls="pb", limit=None):
+    """Depth-first search for callings (one call per lead) whose touch is a
+    true round block containing every row: an extent. Returns the list of
+    calling strings found (rotations count separately)."""
+    start = rounds(method.stage)
+    target = factorial(method.stage)
+    found = []
+
+    def dfs(row, seen, calling):
+        if limit is not None and len(found) >= limit:
+            return
+        for c in calls:
+            lead_rows = list(lead(row, method.lead_changes(c)))
+            head = lead_rows[-1]
+            body = lead_rows[:-1]
+            if len(set(lead_rows)) != len(lead_rows):
+                continue
+            if any(r in seen for r in body):
+                continue
+            if head == start:
+                if len(seen) + len(body) == target:
+                    found.append(calling + c)
+                continue
+            if head in seen or len(seen) + len(lead_rows) > target:
+                continue
+            dfs(head, seen | set(lead_rows), calling + c)
+
+    dfs(start, {start}, "")
+    return found
+
+
 def plain_course(notation, n):
     """Ring leads from rounds until rounds returns. Returns the list of rows
     rung, starting with rounds and ending with rounds again."""
@@ -175,14 +258,21 @@ def describe(rows):
 
 
 def main(argv):
-    if len(argv) != 3:
+    method = find_method(argv[1]) if len(argv) >= 2 else None
+    if method is not None:
+        if len(argv) == 3:
+            rows = touch(method, argv[2])
+        else:
+            rows = plain_course(method.notation, method.stage)
+    elif len(argv) == 3:
+        rows = plain_course(argv[1], int(argv[2]))
+    else:
         print("usage: python3 rings.py <place-notation> <bells>")
-        print("e.g.:  python3 rings.py 'x14x14,12' 4     # Plain Bob Minimus")
-        print("       python3 rings.py '5.1.5.1.5,125' 5 # Plain Bob Doubles")
-        print("       python3 rings.py '3,1.5.1.5.1' 5   # Grandsire Doubles")
+        print("       python3 rings.py <method-name> [calling]")
+        print("e.g.:  python3 rings.py 'x14x14,12' 4")
+        print("       python3 rings.py 'Plain Bob Doubles' pppbpppbpppb")
+        print("methods:", ", ".join(METHODS))
         return 1
-    notation, n = argv[1], int(argv[2])
-    rows = plain_course(notation, n)
     print(grid(rows))
     print(describe(rows))
     return 0
