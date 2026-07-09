@@ -225,6 +225,17 @@ def search_extents(method, calls="pb", limit=None):
     return found
 
 
+def rotation_classes(callings):
+    """Group calling strings that are rotations of one another: the same
+    cyclic composition started at a different point. Returns a dict of
+    canonical (lexicographically least) rotation -> members found."""
+    classes = {}
+    for c in callings:
+        canon = min(c[i:] + c[:i] for i in range(len(c)))
+        classes.setdefault(canon, []).append(c)
+    return classes
+
+
 def course(method):
     """Ring a method's plain blocks until rounds returns at the end of a
     full cycle of blocks. Returns the rows, rounds to rounds."""

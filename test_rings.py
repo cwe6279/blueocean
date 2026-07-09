@@ -148,6 +148,28 @@ def test_plain_bob_minor_extent_needs_singles():
     assert calling.count("s") % 2 == 0  # singles are odd permutations
 
 
+def test_extents_up_to_rotation():
+    # A rotation of a calling is the same cyclic composition started at a
+    # different lead. Up to rotation each family collapses to almost
+    # nothing: PB Doubles has ONE bobs-only extent, Grandsire and Stedman
+    # Doubles two each. (Cambridge's 400 form 16 classes, 4 three-parts.)
+    classes = rings.rotation_classes(
+        rings.search_extents(rings.METHODS["Plain Bob Doubles"], "pb")
+    )
+    assert list(classes) == ["bpppbpppbppp"]
+    classes = rings.rotation_classes(
+        rings.search_extents(rings.METHODS["Grandsire Doubles"], "pbs")
+    )
+    assert sorted(classes) == ["bpbpspbpbpsp", "bspsbspsbsps"]
+    classes = rings.rotation_classes(
+        rings.search_extents(rings.METHODS["Stedman Doubles"], "ps")
+    )
+    assert sorted(classes) == [
+        "pppppppppsppppppppps",
+        "ppppsppppsppppspppps",
+    ]
+
+
 def test_cambridge_surprise_minor_course():
     cam = rings.METHODS["Cambridge Surprise Minor"]
     rows = rings.course(cam)
