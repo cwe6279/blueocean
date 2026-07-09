@@ -193,6 +193,18 @@ def test_blue_line_connectors():
     assert connectors == ["\\", "\\", "\\", "|", "/", "/", "/", "|"]
 
 
+def test_svg_diagram():
+    st = rings.METHODS["Stedman Doubles"]
+    rows = rings.course(st)
+    svg = rings.to_svg(rows, tracks=(1, 2), per_column=12)
+    assert svg.startswith("<svg") and svg.endswith("</svg>")
+    # 5 columns x 2 tracked bells = 10 polylines, 13 points each
+    lines = [l for l in svg.splitlines() if l.startswith("<polyline")]
+    assert len(lines) == 10
+    assert all(l.count(",") == 13 for l in lines)
+    assert '"#c02020"' in svg and '"#2050c0"' in svg  # red treble, blue line
+
+
 def test_falseness_detected():
     # Repeating a whole extent must be false
     rows = rings.plain_course("x14x14,12", 4)

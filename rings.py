@@ -299,6 +299,50 @@ def blue_line(rows, track=1):
     return "\n".join(out)
 
 
+def to_svg(rows, tracks=(1,), per_column=None):
+    """Render rows as a classic printed method diagram: one column per
+    lead, grey figures, each tracked bell's path drawn over them — red
+    for the treble, blue (then green, orange) for the rest."""
+    n = len(rows[0])
+    per = per_column or (len(rows) - 1)
+    columns = [rows[i : i + per + 1] for i in range(0, len(rows) - 1, per)]
+    cw, ch, pad = 16, 15, 24
+    col_w = (n + 2) * cw
+    width = 2 * pad + len(columns) * col_w - 2 * cw
+    height = 2 * pad + per * ch
+    palette = iter(["#2050c0", "#20a040", "#e08020", "#8040c0"])
+    colors = {t: "#c02020" if t == 1 else next(palette) for t in tracks}
+
+    def xy(col, j, place):
+        return (pad + col * col_w + place * cw, pad + j * ch)
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+        f'height="{height}" font-family="monospace" font-size="12">',
+        f'<rect width="{width}" height="{height}" fill="white"/>',
+    ]
+    for c, chunk in enumerate(columns):
+        for j, row in enumerate(chunk):
+            for p, b in enumerate(row):
+                if b in tracks and j > 0:
+                    continue
+                x, y = xy(c, j, p)
+                parts.append(
+                    f'<text x="{x}" y="{y + 4}" fill="#999" '
+                    f'text-anchor="middle">{bell_char(b)}</text>'
+                )
+        for t in tracks:
+            pts = " ".join(
+                "%d,%d" % xy(c, j, row.index(t)) for j, row in enumerate(chunk)
+            )
+            parts.append(
+                f'<polyline points="{pts}" fill="none" stroke="{colors[t]}" '
+                f'stroke-width="1.8" stroke-linejoin="round"/>'
+            )
+    parts.append("</svg>")
+    return "\n".join(parts)
+
+
 def describe(rows):
     n = len(rows[0])
     body = len(rows) - (1 if rows[-1] == rows[0] else 0)
@@ -309,7 +353,13 @@ def describe(rows):
 
 
 def main(argv):
-    args = argv[1:]
+    args = []
+    svg_path = None
+    for a in argv[1:]:
+        if a.endswith(".svg"):
+            svg_path = a
+        else:
+            args.append(a)
     track = 1
     if len(args) >= 2 and args[-1].isdigit() and (
         find_method(args[0]) or len(args) > 2
@@ -324,13 +374,20 @@ def main(argv):
     elif len(args) == 2:
         rows = plain_course(args[0], int(args[1]))
     else:
-        print("usage: python3 rings.py <place-notation> <bells> [track-bell]")
-        print("       python3 rings.py <method-name> [calling] [track-bell]")
+        print("usage: python3 rings.py <place-notation> <bells> [track-bell] [out.svg]")
+        print("       python3 rings.py <method-name> [calling] [track-bell] [out.svg]")
         print("e.g.:  python3 rings.py 'x14x14,12' 4")
         print("       python3 rings.py 'Plain Bob Doubles' pppbpppbpppb 5")
         print("methods:", ", ".join(METHODS))
         return 1
-    print(blue_line(rows, track))
+    if svg_path:
+        per = sum(len(b) for b in method.blocks) if method else None
+        tracks = (1,) if track == 1 else (1, track)
+        with open(svg_path, "w") as f:
+            f.write(to_svg(rows, tracks, per))
+        print(f"wrote {svg_path}")
+    else:
+        print(blue_line(rows, track))
     print(describe(rows))
     return 0
 
