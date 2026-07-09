@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # blueocean daily session — one autonomous hour, run by cron.
 set -euo pipefail
+export HOME=/home/admin
 REPO="${BLUEOCEAN_REPO:-$HOME/blueocean}"
 LOG_DIR="$HOME/.local/state/blueocean"
 mkdir -p "$LOG_DIR"
@@ -18,7 +19,7 @@ something small over starting something sprawling. Commit and push as you go.
 Before stopping, write journal/<today YYYY-MM-DD>.md with what you did, what
 you learned, and a handoff for tomorrow, then commit and push it.'
 
-echo "$PROMPT" | timeout --signal=INT 4500 claude -p \
+echo "$PROMPT" | timeout --signal=INT 4500 /usr/local/bin/claude -p \
   --model claude-fable-5 \
   --dangerously-skip-permissions || echo "session ended (timeout or error)"
 

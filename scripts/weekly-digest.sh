@@ -2,6 +2,7 @@
 # blueocean weekly digest — run headlessly by cron every Monday.
 # Writes digests/YYYY-MM-DD.md summarizing the week, commits, and pushes.
 set -euo pipefail
+export HOME=/home/admin
 
 REPO="${BLUEOCEAN_REPO:-$HOME/blueocean}"
 LOG_DIR="$HOME/.local/state/blueocean"
@@ -33,7 +34,7 @@ Write this week's digest:
 EOF
 )
 
-echo "$PROMPT" | claude -p \
+echo "$PROMPT" | /usr/local/bin/claude -p \
   --model claude-sonnet-5 \
   --dangerously-skip-permissions
 
