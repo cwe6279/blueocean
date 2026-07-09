@@ -120,23 +120,36 @@ def lead(row, changes):
 class Method:
     """A named method: place notation plus its standard calls.
 
+    `notation` is a string, or a list of strings — *blocks* that cycle,
+    one calling position per block. Most methods are one block (a lead);
+    Stedman is two (its sixes, cut at the call sites), because its single
+    replaces a different change in each: 345 mid slow six, 145 mid quick.
+
     A call is itself a scrap of place notation that replaces the same
-    number of changes at the *end* of a lead. E.g. a Plain Bob bob '14'
+    number of changes at the *end* of a block. E.g. a Plain Bob bob '14'
     replaces the lead-end '12'; a Grandsire bob '3.1' replaces '5.1'.
+    Where a call differs by block, give a list, one entry per block.
     """
 
     def __init__(self, name, notation, stage, calls=None):
         self.name = name
         self.notation = notation
         self.stage = stage
-        self.changes = parse(notation)
-        self.calls = {k: parse(v) for k, v in (calls or {}).items()}
+        blocks = [notation] if isinstance(notation, str) else list(notation)
+        self.blocks = [parse(b) for b in blocks]
+        self.changes = [c for b in self.blocks for c in b]
+        self.calls = {
+            k: [parse(t) for t in ([v] * len(self.blocks) if isinstance(v, str) else v)]
+            for k, v in (calls or {}).items()
+        }
 
-    def lead_changes(self, call="p"):
+    def lead_changes(self, call="p", block=0):
+        i = block % len(self.blocks)
+        changes = self.blocks[i]
         if call == "p":
-            return self.changes
-        tail = self.calls[call]
-        return self.changes[: -len(tail)] + tail
+            return changes
+        tail = self.calls[call][i]
+        return changes[: -len(tail)] + tail
 
 
 METHODS = {
@@ -146,6 +159,12 @@ METHODS = {
         Method("Plain Bob Doubles", "5.1.5.1.5,125", 5, {"b": "145", "s": "123"}),
         Method("Plain Bob Minor", "x16x16x16,12", 6, {"b": "14", "s": "1234"}),
         Method("Grandsire Doubles", "3,1.5.1.5.1", 5, {"b": "3.1", "s": "3.123"}),
+        Method(
+            "Stedman Doubles",
+            ["3.1.5.3.1.3", "1.3.5.1.3.1"],
+            5,
+            {"s": ["345", "145"]},
+        ),
     ]
 }
 
@@ -158,12 +177,12 @@ def find_method(name):
 
 
 def touch(method, calling):
-    """Ring one lead per character of `calling`: 'p' plain, 'b' bob,
+    """Ring one block per character of `calling`: 'p' plain, 'b' bob,
     's' single. Returns the rows rung, starting from rounds."""
     row = rounds(method.stage)
     rows = [row]
-    for call in calling.replace(" ", "").lower():
-        for r in lead(row, method.lead_changes(call)):
+    for i, call in enumerate(calling.replace(" ", "").lower()):
+        for r in lead(row, method.lead_changes(call, i)):
             rows.append(r)
         row = rows[-1]
     return rows
@@ -181,7 +200,7 @@ def search_extents(method, calls="pb", limit=None):
         if limit is not None and len(found) >= limit:
             return
         for c in calls:
-            lead_rows = list(lead(row, method.lead_changes(c)))
+            lead_rows = list(lead(row, method.lead_changes(c, len(calling))))
             head = lead_rows[-1]
             body = lead_rows[:-1]
             if len(set(lead_rows)) != len(lead_rows):
@@ -198,6 +217,21 @@ def search_extents(method, calls="pb", limit=None):
 
     dfs(start, {start}, "")
     return found
+
+
+def course(method):
+    """Ring a method's plain blocks until rounds returns at the end of a
+    full cycle of blocks. Returns the rows, rounds to rounds."""
+    row = rounds(method.stage)
+    rows = [row]
+    for i in count():
+        for r in lead(row, method.lead_changes("p", i)):
+            rows.append(r)
+        row = rows[-1]
+        if row == rows[0] and (i + 1) % len(method.blocks) == 0:
+            return rows
+        if len(rows) > 2 * factorial(method.stage):
+            raise ValueError("course does not return to rounds")
 
 
 def plain_course(notation, n):
@@ -286,7 +320,7 @@ def main(argv):
         if len(args) == 2:
             rows = touch(method, args[1])
         else:
-            rows = plain_course(method.notation, method.stage)
+            rows = course(method)
     elif len(args) == 2:
         rows = plain_course(args[0], int(args[1]))
     else:

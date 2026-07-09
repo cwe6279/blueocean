@@ -109,6 +109,43 @@ def test_grandsire_extent_needs_singles():
         assert calling.count("s") in (2, 6)
 
 
+def test_stedman_doubles_course():
+    st = rings.METHODS["Stedman Doubles"]
+    rows = rings.course(st)
+    assert len(rows) - 1 == 60  # 10 sixes
+    assert rings.is_true(rows)
+    assert not rings.is_extent(rows)
+    assert rings.row_str(rows[12]) == "53412"  # lead head per CompLib
+
+
+def test_stedman_single_is_mid_six():
+    # The single replaces a different change in each block: 345 in the
+    # slow six, 145 in the quick six (bells in 4-5 make places).
+    st = rings.METHODS["Stedman Doubles"]
+    assert st.lead_changes("s", 0)[-1] == (3, 4, 5)
+    assert st.lead_changes("s", 1)[-1] == (1, 4, 5)
+    assert st.lead_changes("p", 0)[-1] == (3,)
+    assert st.lead_changes("p", 1)[-1] == (1,)
+
+
+def test_stedman_doubles_extents():
+    # Exhaustive search: exactly 15 singles-only extents from rounds.
+    # 10 use two singles 10 sixes apart (swap a pair, ring the 60
+    # out-of-course rows, swap back); 5 use four singles every 5 sixes.
+    st = rings.METHODS["Stedman Doubles"]
+    found = rings.search_extents(st, "ps")
+    assert len(found) == 15
+    for calling in found:
+        assert rings.is_extent(rings.touch(st, calling))
+        sites = [i for i, c in enumerate(calling) if c == "s"]
+        if len(sites) == 2:
+            assert sites[1] - sites[0] == 10
+        else:
+            assert len(sites) == 4
+            assert [b - a for a, b in zip(sites, sites[1:])] == [5, 5, 5]
+    assert sum(c.count("s") == 2 for c in found) == 10
+
+
 def test_blue_line_connectors():
     # Treble hunting out and back: \ \ \ | / / / |
     rows = rings.plain_course("x14x14,12", 4)
