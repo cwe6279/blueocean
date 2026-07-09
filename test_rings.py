@@ -51,6 +51,18 @@ def test_grandsire_doubles_course():
     assert rings.is_true(rows)
 
 
+def test_grandsire_triples_course():
+    # Where Thompson's theorem actually lives (the 5040 is beyond naive
+    # DFS; the Doubles case above is our exhaustive stand-in).
+    g = rings.METHODS["Grandsire Triples"]
+    rows = rings.course(g)
+    assert len(rows) - 1 == 70  # 5 leads of 14
+    assert rings.is_true(rows)
+    # double-hunt method: both the treble and the 2nd are home at each
+    # lead head
+    assert rings.row_str(rows[14])[:2] == "12"
+
+
 def test_plain_bob_minor_course():
     rows = rings.plain_course("x16x16x16,12", 6)
     assert len(rows) - 1 == 60  # 5 leads of 12
