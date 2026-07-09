@@ -109,6 +109,14 @@ def test_grandsire_extent_needs_singles():
         assert calling.count("s") in (2, 6)
 
 
+def test_blue_line_connectors():
+    # Treble hunting out and back: \ \ \ | / / / |
+    rows = rings.plain_course("x14x14,12", 4)
+    art = rings.blue_line(rows[:9])
+    connectors = [line.strip() for line in art.splitlines()[1::2]]
+    assert connectors == ["\\", "\\", "\\", "|", "/", "/", "/", "|"]
+
+
 def test_falseness_detected():
     # Repeating a whole extent must be false
     rows = rings.plain_course("x14x14,12", 4)

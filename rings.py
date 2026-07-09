@@ -236,16 +236,33 @@ def is_extent(rows):
     return is_true(rows) and len(body) == factorial(n)
 
 
+def _grid_line(row, track):
+    line = "".join(
+        f"({bell_char(b)})" if b == track else f" {bell_char(b)} " for b in row
+    )
+    return line.rstrip()
+
+
 def grid(rows, track=1):
-    """Pretty-print rows, one per line, with the tracked bell's path drawn."""
-    lines = []
+    """Pretty-print rows, one per line, with the tracked bell highlighted."""
+    return "\n".join(_grid_line(row, track) for row in rows)
+
+
+def blue_line(rows, track=1):
+    """Like grid(), but with the tracked bell's path drawn between rows —
+    the 'line' a ringer learns for their bell."""
+    width = 3
+    out = []
+    prev = None
     for row in rows:
-        line = "".join(
-            f"({bell_char(b)})" if b == track else f" {bell_char(b)} "
-            for b in row
-        )
-        lines.append(line.rstrip())
-    return "\n".join(lines)
+        pos = row.index(track)
+        if prev is not None:
+            mid = ((prev * width + 1) + (pos * width + 1)) // 2
+            ch = "|" if pos == prev else ("\\" if pos > prev else "/")
+            out.append(" " * mid + ch)
+        out.append(_grid_line(row, track))
+        prev = pos
+    return "\n".join(out)
 
 
 def describe(rows):
@@ -258,22 +275,28 @@ def describe(rows):
 
 
 def main(argv):
-    method = find_method(argv[1]) if len(argv) >= 2 else None
+    args = argv[1:]
+    track = 1
+    if len(args) >= 2 and args[-1].isdigit() and (
+        find_method(args[0]) or len(args) > 2
+    ):
+        track = int(args.pop())
+    method = find_method(args[0]) if args else None
     if method is not None:
-        if len(argv) == 3:
-            rows = touch(method, argv[2])
+        if len(args) == 2:
+            rows = touch(method, args[1])
         else:
             rows = plain_course(method.notation, method.stage)
-    elif len(argv) == 3:
-        rows = plain_course(argv[1], int(argv[2]))
+    elif len(args) == 2:
+        rows = plain_course(args[0], int(args[1]))
     else:
-        print("usage: python3 rings.py <place-notation> <bells>")
-        print("       python3 rings.py <method-name> [calling]")
+        print("usage: python3 rings.py <place-notation> <bells> [track-bell]")
+        print("       python3 rings.py <method-name> [calling] [track-bell]")
         print("e.g.:  python3 rings.py 'x14x14,12' 4")
-        print("       python3 rings.py 'Plain Bob Doubles' pppbpppbpppb")
+        print("       python3 rings.py 'Plain Bob Doubles' pppbpppbpppb 5")
         print("methods:", ", ".join(METHODS))
         return 1
-    print(grid(rows))
+    print(blue_line(rows, track))
     print(describe(rows))
     return 0
 
