@@ -128,6 +128,19 @@ def test_grandsire_extent_needs_singles():
         assert calling.count("s") in (2, 6)
 
 
+def test_plain_bob_minor_singles_only_extent():
+    # The mirror image of the bobs-only ceiling: the single (1234) is an
+    # odd change, so singles alone reach all 720 rows — and singles-only
+    # extents exist.
+    pb = rings.METHODS["Plain Bob Minor"]
+    heads, rows = rings.reachable_rows(pb, "ps")
+    assert (len(heads), len(rows)) == (120, 720)
+    found = rings.search_extents(pb, "ps", limit=1)
+    assert len(found) == 1 and len(found[0]) == 60
+    assert rings.is_extent(rings.touch(pb, found[0]))
+    assert found[0].count("s") % 2 == 0
+
+
 def test_plain_bob_leadheads_form_cyclic_group():
     # The lead heads of a Plain Bob plain course are the powers of the
     # first lead head: a cyclic group (order 5 on six bells).
