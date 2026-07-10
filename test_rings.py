@@ -408,13 +408,21 @@ def test_blue_line_connectors():
 def test_svg_diagram():
     st = rings.METHODS["Stedman Doubles"]
     rows = rings.course(st)
-    svg = rings.to_svg(rows, tracks=(1, 2), per_column=12)
+    svg = rings.to_svg(rows, tracks=(1, 2), per_column=12, rule=6)
     assert svg.startswith("<svg") and svg.endswith("</svg>")
     # 5 columns x 2 tracked bells = 10 polylines, 13 points each
     lines = [l for l in svg.splitlines() if l.startswith("<polyline")]
     assert len(lines) == 10
     assert all(l.count(",") == 13 for l in lines)
     assert '"#c02020"' in svg and '"#2050c0"' in svg  # red treble, blue line
+    # one rule at the six end mid-column, per column
+    assert sum(l.startswith("<line") for l in svg.splitlines()) == 5
+    # the non-treble track gets a place-bell number at each column top
+    labels = [l for l in svg.splitlines() if "font-weight" in l]
+    assert [l[-8] for l in labels] == [
+        str(chunk.index(2) + 1) for chunk in
+        (rows[0], rows[12], rows[24], rows[36], rows[48])
+    ]
 
 
 def test_falseness_detected():

@@ -367,10 +367,12 @@ def blue_line(rows, track=1):
     return "\n".join(out)
 
 
-def to_svg(rows, tracks=(1,), per_column=None):
+def to_svg(rows, tracks=(1,), per_column=None, rule=None):
     """Render rows as a classic printed method diagram: one column per
     lead, grey figures, each tracked bell's path drawn over them — red
-    for the treble, blue (then green, orange) for the rest."""
+    for the treble, blue (then green, orange) for the rest. Non-treble
+    tracked bells get their place-bell number at each column top; pass
+    `rule` to draw a light line every that many rows (six ends etc)."""
     n = len(rows[0])
     per = per_column or (len(rows) - 1)
     columns = [rows[i : i + per + 1] for i in range(0, len(rows) - 1, per)]
@@ -390,6 +392,23 @@ def to_svg(rows, tracks=(1,), per_column=None):
         f'<rect width="{width}" height="{height}" fill="white"/>',
     ]
     for c, chunk in enumerate(columns):
+        if rule:
+            for j in range(rule, len(chunk) - 1, rule):
+                (x0, y0), (x1, _) = xy(c, j, 0), xy(c, j, n - 1)
+                y = y0 + ch // 2
+                parts.append(
+                    f'<line x1="{x0 - cw // 2}" y1="{y}" '
+                    f'x2="{x1 + cw // 2}" y2="{y}" stroke="#ccc"/>'
+                )
+        for t in tracks:
+            if t == 1:
+                continue
+            x, y = xy(c, 0, chunk[0].index(t))
+            parts.append(
+                f'<text x="{x}" y="{y - 12}" fill="{colors[t]}" '
+                f'text-anchor="middle" font-weight="bold">'
+                f"{chunk[0].index(t) + 1}</text>"
+            )
         for j, row in enumerate(chunk):
             for p, b in enumerate(row):
                 if b in tracks and j > 0:
@@ -450,9 +469,14 @@ def main(argv):
         return 1
     if svg_path:
         per = sum(len(b) for b in method.blocks) if method else None
+        rule = (
+            len(method.blocks[0])
+            if method and len(method.blocks) > 1
+            else None
+        )
         tracks = (1,) if track == 1 else (1, track)
         with open(svg_path, "w") as f:
-            f.write(to_svg(rows, tracks, per))
+            f.write(to_svg(rows, tracks, per, rule))
         print(f"wrote {svg_path}")
     else:
         print(blue_line(rows, track))
