@@ -289,6 +289,41 @@ def test_stedman_doubles_extents():
     assert sum(c.count("s") == 2 for c in found) == 10
 
 
+def test_plain_bob_doubles_all_extents_with_singles():
+    # Allowing singles too, PB Doubles has exactly 12 extent callings:
+    # three three-part classes, each its own reverse — the classic
+    # bobs-only bppp x3, a singles-only ppps x3, and the mixed bpsp x3.
+    pb = rings.METHODS["Plain Bob Doubles"]
+    found = rings.search_extents(pb, "pbs")
+    assert len(found) == 12
+    canons = ["bpppbpppbppp", "bpspbpspbpsp", "pppspppsppps"]
+    assert sorted(rings.rotation_classes(found)) == canons
+    assert sorted(rings.reversal_classes(found)) == canons
+
+
+def test_maximal_bobs_only_censuses():
+    # The reachability ceilings are not just attained but attained in
+    # style. Grandsire Doubles: exactly 2 bobs-only 60s, one class —
+    # bob every other lead. Plain Bob Minor: exactly 140 bobs-only
+    # 360s — 2 three-parts (orbit 10) and 4 full-period (orbit 30),
+    # pairing under reversal with no fixed points into 3.
+    g = rings.METHODS["Grandsire Doubles"]
+    found = rings.search_extents(g, "pb", target=60)
+    assert sorted(found) == ["bpbpbp", "pbpbpb"]
+    pb = rings.METHODS["Plain Bob Minor"]
+    found = rings.search_extents(pb, "pb", target=360)
+    assert len(found) == 140
+    rot = rings.rotation_classes(found)
+    assert sorted(len(v) for v in rot.values()) == [10] * 2 + [30] * 4
+    three_parts = sorted(c for c, v in rot.items() if len(v) == 10)
+    assert three_parts == [
+        "bbpppbppppbbpppbppppbbpppbpppp",
+        "bbppppbpppbbppppbpppbbppppbppp",
+    ]
+    rev = rings.reversal_classes(found)
+    assert sorted(len(v) for v in rev.values()) == [20, 60, 60]
+
+
 def test_reversal_classes():
     # Cambridge is palindromic, so the reverse of an extent calling is
     # again one — in fact every rotation of the reverse is.
