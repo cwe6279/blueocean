@@ -273,6 +273,20 @@ def rotation_classes(callings):
     return classes
 
 
+def reversal_classes(callings):
+    """Group callings that are rotations or reversals of one another.
+    Ringing a touch of a palindromic method backwards reverses its
+    calling string (up to rotation), so this classifies compositions up
+    to rotation and reversal. Canonical form -> members found."""
+    classes = {}
+    for c in callings:
+        canon = min(
+            w[i:] + w[:i] for w in (c, c[::-1]) for i in range(len(w))
+        )
+        classes.setdefault(canon, []).append(c)
+    return classes
+
+
 def course(method):
     """Ring a method's plain blocks until rounds returns at the end of a
     full cycle of blocks. Returns the rows, rounds to rounds."""

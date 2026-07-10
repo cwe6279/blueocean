@@ -1,4 +1,8 @@
-"""Tests for rings.py. Run: python3 test_rings.py"""
+"""Tests for rings.py. Run: python3 test_rings.py
+
+Set RINGS_SLOW=1 to include the ~1 minute exhaustive census tests."""
+
+import os
 
 import rings
 
@@ -283,6 +287,47 @@ def test_stedman_doubles_extents():
             assert len(sites) == 4
             assert [b - a for a, b in zip(sites, sites[1:])] == [5, 5, 5]
     assert sum(c.count("s") == 2 for c in found) == 10
+
+
+def test_reversal_classes():
+    # Cambridge is palindromic, so the reverse of an extent calling is
+    # again one — in fact every rotation of the reverse is.
+    cam = rings.METHODS["Cambridge Surprise Minor"]
+    c = ("ppppbppbpb" * 3)[::-1]
+    rotations = [c[i:] + c[:i] for i in range(len(c))]
+    assert all(rings.is_extent(rings.touch(cam, r)) for r in rotations)
+    # At Doubles every rotation class is its own reverse: classifying up
+    # to rotation+reversal changes nothing (1, 2 and 2 classes stand).
+    for name, calls, canons in [
+        ("Plain Bob Doubles", "pb", ["bpppbpppbppp"]),
+        ("Grandsire Doubles", "pbs", ["bpbpspbpbpsp", "bspsbspsbsps"]),
+        ("Stedman Doubles", "ps",
+         ["pppppppppsppppppppps", "ppppsppppsppppspppps"]),
+    ]:
+        found = rings.search_extents(rings.METHODS[name], calls)
+        assert sorted(rings.reversal_classes(found)) == canons
+
+
+def test_cambridge_full_census_slow():
+    # The complete bobs-only census of Cambridge Surprise Minor (~1 min):
+    # exactly 400 extents; 16 rotation classes — 4 three-parts (orbit
+    # 10) and 12 full-period (orbit 30); reversal pairs the 16 with no
+    # fixed points, three-parts among themselves: 8 up to rotation and
+    # reversal. Run with RINGS_SLOW=1.
+    if not os.environ.get("RINGS_SLOW"):
+        return
+    cam = rings.METHODS["Cambridge Surprise Minor"]
+    found = rings.search_extents(cam, "pb")
+    assert len(found) == 400
+    rot = rings.rotation_classes(found)
+    assert len(rot) == 16
+    orbits = sorted(len(v) for v in rot.values())
+    assert orbits == [10] * 4 + [30] * 12
+    three_parts = [c for c, v in rot.items() if len(v) == 10]
+    assert all(c == c[:10] * 3 for c in three_parts)
+    rev = rings.reversal_classes(found)
+    assert len(rev) == 8  # no class is its own reverse
+    assert sorted(len(v) for v in rev.values()) == [20] * 2 + [60] * 6
 
 
 def test_blue_line_connectors():
