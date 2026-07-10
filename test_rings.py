@@ -52,8 +52,10 @@ def test_grandsire_doubles_course():
 
 
 def test_grandsire_triples_course():
-    # Where Thompson's theorem actually lives (the 5040 is beyond naive
-    # DFS; the Doubles case above is our exhaustive stand-in).
+    # Where Thompson's theorem actually lives: bobs-only Grandsire
+    # Triples reaches all 5040 rows (see the reachability census), so
+    # its impossibility is deep. The Doubles case is a shallow
+    # reachability fact by comparison.
     g = rings.METHODS["Grandsire Triples"]
     rows = rings.course(g)
     assert len(rows) - 1 == 70  # 5 leads of 14
@@ -105,8 +107,9 @@ def test_bobs_only_extents_of_plain_bob_doubles():
 
 
 def test_thompson_no_bobs_only_grandsire_extent():
-    # W. H. Thompson proved (1886) that no extent of Grandsire Doubles
-    # can be rung with bobs alone. Exhaustive search agrees.
+    # No extent of Grandsire Doubles can be rung with bobs alone.
+    # Exhaustive search agrees — though at Doubles this is shallow:
+    # bobs only ever reach 60 of the 120 rows (see the census below).
     g = rings.METHODS["Grandsire Doubles"]
     assert rings.search_extents(g, "pb") == []
 
@@ -144,10 +147,51 @@ def test_plain_bob_minimus_unique_extent():
 
 
 def test_no_bobs_only_extent_of_plain_bob_minor():
-    # The classical result that a 720 of Plain Bob Minor cannot be rung
-    # with bobs alone (Q-set parity), confirmed by exhaustive search.
+    # A 720 of Plain Bob Minor cannot be rung with bobs alone,
+    # confirmed by exhaustive search. The reason is reachability, not
+    # anything subtle: see test_bobs_only_ceilings_are_attained.
     pb = rings.METHODS["Plain Bob Minor"]
     assert rings.search_extents(pb, "pb") == []
+
+
+def test_reachable_rows_census():
+    # How much of the extent can each call set ever touch? The union of
+    # all reachable leads bounds every true touch. Heads x rows:
+    def census(name, calls):
+        heads, rows = rings.reachable_rows(rings.METHODS[name], calls)
+        return len(heads), len(rows)
+
+    assert census("Plain Bob Minimus", "pb") == (3, 24)
+    assert census("Plain Bob Doubles", "pb") == (24, 120)
+    assert census("Plain Bob Minor", "pb") == (60, 360)  # half!
+    assert census("Plain Bob Minor", "pbs") == (120, 720)
+    assert census("Grandsire Doubles", "pb") == (12, 60)  # half!
+    assert census("Grandsire Doubles", "pbs") == (24, 120)
+    assert census("Cambridge Surprise Minor", "pb") == (60, 720)
+    assert census("Stedman Doubles", "p") == (10, 60)
+    assert census("Stedman Doubles", "ps") == (120, 120)
+    # Thompson's 1886 theorem is the deep one: Grandsire Triples
+    # bobs-only reaches ALL 5040 rows, yet no extent exists.
+    assert census("Grandsire Triples", "pb") == (360, 5040)
+
+
+def test_bobs_only_ceilings_are_attained():
+    # Plain Bob Minor bobs-only reaches only 360 rows — THAT is why no
+    # bobs-only 720 exists — and the bound is sharp: a true 360 exists
+    # covering every reachable row (a three-part, ppppbpppbb x3).
+    pb = rings.METHODS["Plain Bob Minor"]
+    found = rings.search_extents(pb, "pb", limit=1, target=360)
+    assert found == ["ppppbpppbb" * 3]
+    rows = rings.touch(pb, found[0])
+    assert rings.is_true(rows)
+    assert set(rows[:-1]) == rings.reachable_rows(pb, "pb")[1]
+    # Grandsire Doubles likewise: 60 reachable, attained by pbpbpb.
+    g = rings.METHODS["Grandsire Doubles"]
+    found = rings.search_extents(g, "pb", limit=1, target=60)
+    assert found == ["pbpbpb"]
+    rows = rings.touch(g, found[0])
+    assert rings.is_true(rows)
+    assert set(rows[:-1]) == rings.reachable_rows(g, "pb")[1]
 
 
 def test_plain_bob_minor_extent_needs_singles():

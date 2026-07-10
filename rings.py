@@ -200,12 +200,13 @@ def touch(method, calling):
     return rows
 
 
-def search_extents(method, calls="pb", limit=None):
+def search_extents(method, calls="pb", limit=None, target=None):
     """Depth-first search for callings (one call per lead) whose touch is a
-    true round block containing every row: an extent. Returns the list of
-    calling strings found (rotations count separately)."""
+    true round block of exactly `target` rows (default n!: an extent).
+    Returns the list of calling strings found (rotations count
+    separately)."""
     start = rounds(method.stage)
-    target = factorial(method.stage)
+    target = target or factorial(method.stage)
     found = []
 
     def dfs(row, seen, calling):
@@ -229,6 +230,36 @@ def search_extents(method, calls="pb", limit=None):
 
     dfs(start, {start}, "")
     return found
+
+
+def reachable_rows(method, calls="pb"):
+    """All lead heads, and all rows, that any touch of `method` using
+    only `calls` could ever contain: the union of the leads rung from
+    every reachable head. Returns (heads, rows) as sets.
+
+    This bounds every true touch, and the bound bites: Plain Bob Minor
+    with bobs only reaches just 360 of the 720 rows, and Grandsire
+    Doubles with bobs only just 60 of the 120 — the head group and the
+    lead's tail permutations together span only half the extent. Both
+    famous 'no bobs-only extent' facts are reachability facts. Grandsire
+    Triples, by contrast, reaches all 5040 rows bobs-only; Thompson's
+    1886 impossibility proof is about how leads can be joined, which is
+    why it needed a real argument."""
+    start = rounds(method.stage)
+    nblocks = len(method.blocks)
+    seen, rows = set(), set()
+    stack = [(start, 0)]
+    while stack:
+        h, i = stack.pop()
+        if (h, i) in seen:
+            continue
+        seen.add((h, i))
+        rows.add(h)
+        for c in calls:
+            body = list(lead(h, method.lead_changes(c, i)))
+            rows.update(body[:-1])
+            stack.append((body[-1], (i + 1) % nblocks))
+    return {h for h, i in seen}, rows
 
 
 def rotation_classes(callings):
