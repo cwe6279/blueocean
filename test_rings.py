@@ -308,6 +308,38 @@ def test_reversal_classes():
         assert sorted(rings.reversal_classes(found)) == canons
 
 
+def test_relabelling_cambridge_extents_gives_only_rotations():
+    # Could relabelling the bells (conjugation) relate two of
+    # Cambridge's extent classes? Relabelling a touch by the inverse of
+    # any of its 720 rows gives a sequence through rounds with the SAME
+    # change at every step; it is a touch of Cambridge again only if
+    # lead boundaries realign. Cambridge's 24-change sequence matches
+    # itself at no nonzero offset (even letting each lead end be 12 or
+    # 14), so the only relabellings are by lead heads \u2014 exactly the 30
+    # rotations of the calling, already counted. The census 400/16/8
+    # stands under conjugation.
+    cam = rings.METHODS["Cambridge Surprise Minor"]
+    tokens = cam.lead_changes("p")
+    body, seq = tokens[:23], tokens * 2
+    viable = []
+    for k in range(24):
+        ok = True
+        for i, b in enumerate(body):
+            if (k + i) % 24 == 23:
+                ok = ok and b in [(1, 2), (1, 4)]
+            else:
+                ok = ok and seq[k + i] == b
+        if ok:
+            viable.append(k)
+    assert viable == [0]
+    # and relabelling by a lead head really does rotate the calling:
+    calling = "ppppbppbpb" * 3
+    rows = rings.touch(cam, calling)[:-1]
+    lam = {b: i + 1 for i, b in enumerate(rows[24])}
+    relabelled = [tuple(lam[b] for b in r) for r in rows[24:] + rows[:24]]
+    assert relabelled == rings.touch(cam, calling[1:] + calling[:1])[:-1]
+
+
 def test_cambridge_full_census_slow():
     # The complete bobs-only census of Cambridge Surprise Minor (~1 min):
     # exactly 400 extents; 16 rotation classes — 4 three-parts (orbit
