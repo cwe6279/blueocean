@@ -261,6 +261,42 @@ def test_grandsire_triples_leads_nearly_partition():
     assert shared == {r for r in rows if r[0] == 1 and r not in heads}
 
 
+def test_grandsire_triples_bobs_only_4998():
+    # Thompson forbids ONE round block; parity permits two — and two
+    # suffice. Hillclimbing over whole-Q-set callings (the only ones
+    # whose next-head map is a permutation) found an exact 2-block
+    # cover of all 5040 rows: this bobs-only 4998 (357 leads) plus the
+    # single bob course bbb from 1346725 (3 leads, 42 rows). 4998 is
+    # the celebrated longest bobs-only touch of Grandsire Triples —
+    # the extent minus one bob course, exactly as parity dictates.
+    m = rings.METHODS["Grandsire Triples"]
+    calling = (
+        "pbppbbppppbbpbbppbbpbbppbbpbbppbbpbppppbpppbbppbbppppbbppbp"
+        "bbppppbpbbpbbppppbbpbbppbbpbpppbpppbbpbbpbbpppbppbpbbpbpbpp"
+        "ppbpbbpppbpppbbppbbppbppbbpbbpbbppbbpbppbpppbpbbppbppbppppb"
+        "bppbbppbpbpbbppbbpbbppbbpbbpbppppbpbbpppbbppbbppppbpbpbppbp"
+        "pbpbpbbpppbppppbbpbbppbppbpbpbbpbbpbbppbbpbbpbpbbppbbpbbppb"
+        "ppbppbpbbpbbppbppbbppbbpppbbpppbpbbppppbbpppbbpbpbbppppbpbb"
+        "ppb"
+    )
+    assert len(calling) == 357
+    rows = rings.touch(m, calling)
+    assert rows[-1] == rings.rounds(7)
+    assert rings.is_true(rows)
+    assert len(rows) - 1 == 4998
+    head = tuple(rings.bell_from_char(c) for c in "1346725")
+    block2, h = [head], head
+    for _ in "bbb":
+        block2.extend(rings.lead(h, m.lead_changes("b")))
+        h = block2[-1]
+    assert h == head
+    assert rings.is_true(block2)
+    missing = set(block2[:-1])
+    assert len(missing) == 42
+    assert not missing & set(rows[:-1])
+    assert len(missing | set(rows[:-1])) == 5040
+
+
 def test_grandsire_extent_needs_singles():
     g = rings.METHODS["Grandsire Doubles"]
     found = rings.search_extents(g, "pbs")
