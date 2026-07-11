@@ -352,6 +352,38 @@ def qset_parity_certificate(method, call="b"):
     }
 
 
+def lead_multiplicity(method, calls="pb"):
+    """In how many reachable leads does each reachable row lie? A lead
+    from head h 'owns' h and every later row before the next head; this
+    counts, for each reachable row, the heads owning it under any of
+    `calls`, returning {multiplicity: number of rows}.
+
+    Where calls differ only in the final change (Plain Bob, Cambridge)
+    the leads from a head own the same rows and the multiplicity is
+    uniformly 2 — the treble passes each place twice per lead — except
+    at Minimus, where a lead is half the extent and multiplicity is 1.
+    Grandsire's calls differ a change earlier, so a head owns two
+    variants of its penultimate row and the picture shifts: bobs-only
+    Grandsire Triples has multiplicity 1 almost everywhere — a head
+    lies in no lead but its own, and only the non-head treble-lead
+    rows are shared — so leads nearly partition the extent, which is
+    why an extent must use every reachable head exactly once (the
+    hypothesis qset_parity_certificate leans on)."""
+    if len(method.blocks) != 1:
+        raise ValueError("lead_multiplicity needs a single-block method")
+    heads, rows = reachable_rows(method, calls)
+    owners = {r: set() for r in rows}
+    for h in heads:
+        owners[h].add(h)
+        for c in calls:
+            for r in list(lead(h, method.lead_changes(c)))[:-1]:
+                owners[r].add(h)
+    counts = {}
+    for owning in owners.values():
+        counts[len(owning)] = counts.get(len(owning), 0) + 1
+    return counts
+
+
 def rotation_classes(callings):
     """Group calling strings that are rotations of one another: the same
     cyclic composition started at a different point. Returns a dict of

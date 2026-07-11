@@ -221,6 +221,46 @@ def test_qset_lemmas_by_brute_force():
     assert parities == {0}
 
 
+def test_lead_multiplicity_census():
+    # Yesterday's open question — why does each row lie in exactly TWO
+    # possible leads? — answered by census. It holds wherever calls
+    # differ only in the final change (the treble passes each place
+    # twice per lead): Plain Bob and Cambridge are uniformly 2, except
+    # Minimus, whose lead is half the extent (1). Grandsire's calls
+    # strike a change earlier and break the pattern.
+    def mult(name, calls="pb"):
+        return rings.lead_multiplicity(rings.METHODS[name], calls)
+
+    assert mult("Plain Bob Minimus") == {1: 24}
+    assert mult("Plain Bob Doubles") == {2: 120}
+    assert mult("Plain Bob Minor") == {2: 360}
+    assert mult("Plain Bob Minor", "ps") == {2: 720}
+    assert mult("Plain Bob Minor", "pbs") == {2: 720}
+    assert mult("Cambridge Surprise Minor") == {2: 720}
+    assert mult("Grandsire Doubles") == {2: 48, 3: 12}
+    # Bobs-only Grandsire Triples: leads NEARLY partition the extent.
+    assert mult("Grandsire Triples") == {1: 4680, 2: 360}
+
+
+def test_grandsire_triples_leads_nearly_partition():
+    # The fine structure behind {1: 4680, 2: 360}: a lead head lies in
+    # no lead but its own, and the shared rows are exactly the OTHER
+    # treble-lead rows (treble leading, not a head). So covering all
+    # 5040 rows forces using all 360 heads exactly once — the
+    # hypothesis of the Thompson certificate, visible row by row.
+    m = rings.METHODS["Grandsire Triples"]
+    heads, rows = rings.reachable_rows(m, "pb")
+    owners = {r: set() for r in rows}
+    for h in heads:
+        owners[h].add(h)
+        for c in "pb":
+            for r in list(rings.lead(h, m.lead_changes(c)))[:-1]:
+                owners[r].add(h)
+    assert all(owners[h] == {h} for h in heads)
+    shared = {r for r, o in owners.items() if len(o) == 2}
+    assert shared == {r for r in rows if r[0] == 1 and r not in heads}
+
+
 def test_grandsire_extent_needs_singles():
     g = rings.METHODS["Grandsire Doubles"]
     found = rings.search_extents(g, "pbs")
