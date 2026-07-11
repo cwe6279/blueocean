@@ -244,7 +244,7 @@ def reachable_rows(method, calls="pb"):
     famous 'no bobs-only extent' facts are reachability facts. Grandsire
     Triples, by contrast, reaches all 5040 rows bobs-only; Thompson's
     1886 impossibility proof is about how leads can be joined, which is
-    why it needed a real argument."""
+    why it needed a real argument — see qset_parity_certificate."""
     start = rounds(method.stage)
     nblocks = len(method.blocks)
     seen, rows = set(), set()
@@ -260,6 +260,96 @@ def reachable_rows(method, calls="pb"):
             rows.update(body[:-1])
             stack.append((body[-1], (i + 1) % nblocks))
     return {h for h, i in seen}, rows
+
+
+def compose(a, b):
+    """Compose permutations as rows: compose(h, g) is the row reached by
+    applying to h whatever took rounds to g. (h∘g)[i] = h[g[i]-1]."""
+    return tuple(a[i - 1] for i in b)
+
+
+def inverse(g):
+    out = [0] * len(g)
+    for i, v in enumerate(g):
+        out[v - 1] = i + 1
+    return tuple(out)
+
+
+def head_perm(method, call="p"):
+    """The lead-head permutation g of a single-block method rung with
+    `call`: one lead sends head h to compose(h, g)."""
+    if len(method.blocks) != 1:
+        raise ValueError("head_perm needs a single-block method")
+    return tuple(lead(rounds(method.stage), method.lead_changes(call)))[-1]
+
+
+def qset_parity_certificate(method, call="b"):
+    """Thompson's Q-set parity argument (1886), with every hypothesis
+    checked mechanically rather than assumed.
+
+    Setting: touches of `method` using plain and `call` only. Let gp, gb
+    be the two lead-head permutations and H the heads reachable from
+    rounds. An extent has n!/lead_len leads whose heads are distinct
+    rows in H; IF that count equals |H|, every head is used exactly
+    once, so 'next head' is a permutation F of H — and a one-round-block
+    extent makes F a single |H|-cycle.
+
+    Truth forces calls in whole Q-sets: F(h1) = F(h2) with h1 bobbed,
+    h2 plained means h1 = sigma(h2) for sigma = gp.gb^-1, so the plained
+    heads are closed under sigma — a union of sigma-orbits (Q-sets).
+    Hence F is the plain map composed with one |Q|-cycle per bobbed
+    Q-set. IF every |Q| is odd, those cycles are even permutations, so
+    the parity of F's cycle count equals that of the plain map's — and
+    a single cycle needs it odd.
+
+    Returns the computed facts; 'extent_impossible' is True only when
+    all hypotheses verify. For Grandsire Triples bobs-only: |H| = 360 =
+    extent leads, 72 Q-sets of size 5 (sigma is conjugate to the
+    5-cycle pi7.pi3), 72 plain courses — even, so no bobs-only extent
+    exists. This is Thompson's 1886 theorem, proved."""
+    gp = head_perm(method, "p")
+    gb = head_perm(method, call)
+    sigma = compose(gp, inverse(gb))
+    start = rounds(method.stage)
+    heads = {start}
+    stack = [start]
+    while stack:
+        h = stack.pop()
+        for g in (gp, gb):
+            nh = compose(h, g)
+            if nh not in heads:
+                heads.add(nh)
+                stack.append(nh)
+
+    def orbit_sizes(g):
+        sizes, seen = [], set()
+        for h in heads:
+            if h in seen:
+                continue
+            size, x = 0, h
+            while x not in seen:
+                seen.add(x)
+                x = compose(x, g)
+                size += 1
+            sizes.append(size)
+        return sizes
+
+    qset_sizes = orbit_sizes(sigma)
+    plain_cycles = len(orbit_sizes(gp))
+    extent_leads, rem = divmod(factorial(method.stage), len(method.changes))
+    return {
+        "heads": len(heads),
+        "extent_leads": extent_leads,
+        "qsets": len(qset_sizes),
+        "qset_sizes": sorted(set(qset_sizes)),
+        "plain_cycles": plain_cycles,
+        "extent_impossible": (
+            rem == 0
+            and extent_leads == len(heads)
+            and all(s % 2 for s in qset_sizes)
+            and plain_cycles % 2 == 0
+        ),
+    }
 
 
 def rotation_classes(callings):

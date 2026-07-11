@@ -118,6 +118,109 @@ def test_thompson_no_bobs_only_grandsire_extent():
     assert rings.search_extents(g, "pb") == []
 
 
+def test_thompson_theorem_proved():
+    # Thompson (1886): no extent of Grandsire Triples can be rung with
+    # bobs alone. Search cannot decide this (the space is astronomical);
+    # the Q-set parity certificate proves it. Bobs-only, exactly 360
+    # lead heads are reachable and an extent needs exactly 360 leads,
+    # so every head is used once and 'next head' is a permutation F of
+    # the heads — a single 360-cycle. Truth forces calls in whole
+    # Q-sets, which here have FIVE members (sigma = gp.gb^-1 is
+    # conjugate to the 5-cycle pi7.pi3), so F is the plain map times
+    # even permutations: its cycle-count parity is stuck at that of the
+    # 72 plain courses — even, never 1. No bobs-only extent.
+    cert = rings.qset_parity_certificate(rings.METHODS["Grandsire Triples"])
+    assert cert == {
+        "heads": 360,
+        "extent_leads": 360,
+        "qsets": 72,
+        "qset_sizes": [5],
+        "plain_cycles": 72,
+        "extent_impossible": True,
+    }
+
+
+def test_qset_certificate_scope():
+    # The certificate only claims impossibility when its hypotheses
+    # verify — and where extents are known to exist, they don't.
+    def cert(name, call="b"):
+        c = rings.qset_parity_certificate(rings.METHODS[name], call)
+        return c["heads"], c["extent_leads"], c["extent_impossible"]
+
+    # Plain Bob Minor bobs-only 720: a SECOND, independent proof —
+    # 60 heads = 60 leads needed, Q-sets of 3, 12 plain courses (even).
+    # The reachability argument (360 < 720 rows) blocks it too.
+    assert cert("Plain Bob Minor") == (60, 60, True)
+    # Grandsire Doubles likewise doubly impossible: parity AND reach.
+    assert cert("Grandsire Doubles") == (12, 12, True)
+    # PB Doubles: 12 leads needed but 24 heads reachable, so F needn't
+    # be a permutation — silent, and indeed pppb x3 exists.
+    assert cert("Plain Bob Doubles") == (24, 12, False)
+    # Cambridge: 30 leads of 60 heads — silent; 400 extents exist.
+    assert cert("Cambridge Surprise Minor") == (60, 30, False)
+    # PB Minimus: hypotheses hold but 1 plain course is already odd —
+    # silent, and the plain course IS the extent.
+    assert cert("Plain Bob Minimus") == (3, 3, False)
+    # Singles break the parity trap with EVEN Q-sets: PB Minor
+    # singles-only has Q-sets of 2 (and 120 heads > 60 leads) — silent,
+    # and singles-only extents exist. Grandsire Triples with singles
+    # reaches all 720 heads with Q-sets of 6 — silent, extents exist.
+    c = rings.qset_parity_certificate(rings.METHODS["Plain Bob Minor"], "s")
+    assert (c["qset_sizes"], c["extent_impossible"]) == ([2], False)
+    c = rings.qset_parity_certificate(
+        rings.METHODS["Grandsire Triples"], "s"
+    )
+    assert (c["heads"], c["qset_sizes"], c["extent_impossible"]) == (
+        720, [6], False
+    )
+
+
+def test_qset_lemmas_by_brute_force():
+    # The two lemmas behind the certificate, verified exhaustively on
+    # Grandsire Doubles (12 heads, 4096 call assignments): 'next head'
+    # is a bijection exactly for the 2^4 = 16 whole-Q-set assignments,
+    # and its cycle count is always even (like the 4 plain courses) —
+    # never the single round block an extent would need.
+    from itertools import product
+
+    g = rings.METHODS["Grandsire Doubles"]
+    gp, gb = rings.head_perm(g, "p"), rings.head_perm(g, "b")
+    sigma = rings.compose(gp, rings.inverse(gb))
+    heads, _ = rings.reachable_rows(g, "pb")
+    H = sorted(heads)
+    orbits, seen = [], set()
+    for h in H:
+        if h in seen:
+            continue
+        orb, x = set(), h
+        while x not in seen:
+            seen.add(x)
+            orb.add(x)
+            x = rings.compose(x, sigma)
+        orbits.append(orb)
+    assert sorted(len(o) for o in orbits) == [3, 3, 3, 3]
+    bijective, parities = [], set()
+    for f in product("pb", repeat=12):
+        F = {h: rings.compose(h, gp if c == "p" else gb)
+             for h, c in zip(H, f)}
+        if len(set(F.values())) < 12:
+            continue
+        bijective.append(f)
+        plain = {h for h, c in zip(H, f) if c == "p"}
+        assert all(o <= plain or not (o & plain) for o in orbits)
+        cycles, done = 0, set()
+        for h in H:
+            if h in done:
+                continue
+            cycles += 1
+            while h not in done:
+                done.add(h)
+                h = F[h]
+        parities.add(cycles % 2)
+    assert len(bijective) == 16
+    assert parities == {0}
+
+
 def test_grandsire_extent_needs_singles():
     g = rings.METHODS["Grandsire Doubles"]
     found = rings.search_extents(g, "pbs")
