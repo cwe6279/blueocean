@@ -297,6 +297,31 @@ def test_grandsire_triples_bobs_only_4998():
     assert len(missing | set(rows[:-1])) == 5040
 
 
+def test_no_5026_bobs_only_grandsire_triples():
+    # Sharper than Thompson: no 359-lead (5026) bobs-only round block
+    # exists either. A lone touch needn't call whole Q-sets, but a
+    # missing head m still forces calls: neither predecessor may ring
+    # into m, so P^-1(m) must be bobbed and B^-1(m) plained. But the
+    # two predecessors of ANY head lie in the same Q-set — P^-1(m) =
+    # sigma^4(B^-1(m)) — and that Q-set never contains m itself, so
+    # with only m missing all five of its heads are used and truth
+    # (successors in a cycle are distinct) forces it all-plain or
+    # all-bobbed. Contradiction: 4998 cannot be beaten by one lead.
+    # Left-multiplication symmetry makes m = rounds check every m.
+    m = rings.METHODS["Grandsire Triples"]
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    sigma = rings.compose(gp, rings.inverse(gb))
+    pred_p, pred_b = rings.inverse(gp), rings.inverse(gb)
+    assert pred_p != pred_b
+    orbit, x = [pred_b], pred_b
+    for _ in range(4):
+        x = rings.compose(x, sigma)
+        orbit.append(x)
+    assert orbit[4] == pred_p  # same Q-set, four sigma-steps apart
+    assert len(set(orbit)) == 5
+    assert rings.rounds(7) not in orbit
+
+
 def test_grandsire_extent_needs_singles():
     g = rings.METHODS["Grandsire Doubles"]
     found = rings.search_extents(g, "pbs")
