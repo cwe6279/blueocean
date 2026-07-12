@@ -352,6 +352,132 @@ def qset_parity_certificate(method, call="b"):
     }
 
 
+def qset_deficit_certificate(method, call="b", missing=1):
+    """The Q-set machinery sharpened to near-extents: can a true round
+    block fall exactly `missing` leads short of the extent?
+
+    Hypotheses as in qset_parity_certificate (reachable heads == extent
+    leads, all Q-sets odd), else {'applicable': False}. Then a block of
+    extent_leads - missing leads rings that many distinct heads, and its
+    successor map F is a single cycle on the used heads. Necessary facts:
+
+      * nothing may ring into a missing head m: its plain predecessor,
+        if used, is bobbed, and its bob predecessor plained;
+      * F injective forbids a plained h with sigma(h) bobbed, so plain
+        propagates forwards and bob backwards along each Q-set.
+
+    Left-multiplying by the inverse of a missing head is a relabelling
+    that keeps the method, calls and truth and moves that head to
+    rounds, so fixing rounds missing and looping the rest is exhaustive.
+    Each configuration then either dies of a forced-call contradiction;
+    dies of parity — adjoining the missing heads as fixed points makes a
+    permutation F~ of all heads that a block would give 1 + missing
+    cycles, yet every consistent assignment is the forced baseline plus
+    whole-Q-set toggles, and a toggle multiplies F~ by a |Q|-cycle (even
+    when |Q| is odd), so the cycle-count parity of the baseline is an
+    invariant — or stays open (the certificate is silent; head-level
+    necessary conditions cannot refute such a block).
+
+    Grandsire Triples bobs-only: missing 0 is Thompson's theorem again
+    (parity); missing 1 and 2 die entirely of forced contradictions —
+    no 5026, no 5012 — and missing 3 leaves exactly ONE open
+    configuration, the bob course through rounds, which the known 4998
+    realises. So 4998 is the longest bobs-only round block, and its
+    complement is a single bob course, uniquely up to relabelling."""
+    from itertools import combinations
+
+    gp = head_perm(method, "p")
+    gb = head_perm(method, call)
+    sigma = compose(gp, inverse(gb))
+    start = rounds(method.stage)
+    heads = {start}
+    stack = [start]
+    while stack:
+        h = stack.pop()
+        for g in (gp, gb):
+            nh = compose(h, g)
+            if nh not in heads:
+                heads.add(nh)
+                stack.append(nh)
+    extent_leads, rem = divmod(factorial(method.stage), len(method.changes))
+    if rem or extent_leads != len(heads):
+        return {"applicable": False}
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+    P = [idx[compose(h, gp)] for h in H]
+    B = [idx[compose(h, gb)] for h in H]
+    S = [idx[compose(h, sigma)] for h in H]
+    Pi, Bi, Si = [0] * n, [0] * n, [0] * n
+    for i in range(n):
+        Pi[P[i]], Bi[B[i]], Si[S[i]] = i, i, i
+    orbit, orbits = [-1] * n, []
+    for i in range(n):
+        if orbit[i] >= 0:
+            continue
+        o, j = [], i
+        while orbit[j] < 0:
+            orbit[j] = len(orbits)
+            o.append(j)
+            j = S[j]
+        orbits.append(o)
+    if not all(len(o) % 2 for o in orbits):
+        return {"applicable": False}
+    root = idx[start]
+    combos = (
+        [()] if missing == 0
+        else combinations([i for i in range(n) if i != root], missing - 1)
+    )
+    target, nconfigs = 1 + missing, 0
+    tallies = {"forced": 0, "parity": 0}
+    open_configs = []
+    for rest in combos:
+        nconfigs += 1
+        miss = {root, *rest} if missing else set()
+        calls, work, conflict = {}, [], False
+        seeds = [(Pi[m], 1) for m in miss] + [(Bi[m], 0) for m in miss]
+        while (seeds or work) and not conflict:
+            h, c = (work or seeds).pop()
+            if h in miss:
+                continue
+            prev = calls.get(h)
+            if prev is None:
+                calls[h] = c
+                work.append((S[h] if c == 0 else Si[h], c))
+            elif prev != c:
+                conflict = True
+        if conflict:
+            tallies["forced"] += 1
+            continue
+        touched = {orbit[m] for m in miss} | {orbit[h] for h in calls}
+        free_ok = all(
+            x in miss or x in calls for oi in touched for x in orbits[oi]
+        )
+        F = [i if i in miss else (B[i] if calls.get(i) else P[i])
+             for i in range(n)]
+        cycles, done = 0, [False] * n
+        for i in range(n):
+            if done[i]:
+                continue
+            cycles += 1
+            while not done[i]:
+                done[i] = True
+                i = F[i]
+        if free_ok and len(set(F)) == n and cycles % 2 != target % 2:
+            tallies["parity"] += 1
+        else:
+            open_configs.append(tuple(H[i] for i in sorted(miss)))
+    return {
+        "applicable": True,
+        "missing": missing,
+        "configs": nconfigs,
+        "forced": tallies["forced"],
+        "parity": tallies["parity"],
+        "open_configs": open_configs,
+        "block_impossible": not open_configs,
+    }
+
+
 def lead_multiplicity(method, calls="pb"):
     """In how many reachable leads does each reachable row lie? A lead
     from head h 'owns' h and every later row before the next head; this

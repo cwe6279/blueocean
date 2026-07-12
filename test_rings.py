@@ -322,6 +322,76 @@ def test_no_5026_bobs_only_grandsire_triples():
     assert rings.rounds(7) not in orbit
 
 
+def test_no_5012_bobs_only_grandsire_triples():
+    # The last gap between the 4998 and a maximality theorem. The
+    # deficit certificate mechanises the predecessor argument: fixing
+    # rounds as one missing head (left-relabelling), ALL 359 choices of
+    # the second missing head die of forced-call contradictions — the
+    # calls forced by 'nothing rings into a missing head' cannot
+    # coexist with Q-set propagation. No 358-lead block, no 5012; with
+    # yesterday's no-5026 and Thompson's no-5040, nothing between 4998
+    # and the extent survives.
+    m = rings.METHODS["Grandsire Triples"]
+    for k, configs in [(1, 1), (2, 359)]:
+        cert = rings.qset_deficit_certificate(m, "b", k)
+        assert cert["applicable"]
+        assert cert["configs"] == configs
+        assert cert["forced"] == configs  # every config self-destructs
+        assert cert["block_impossible"]
+
+
+def test_4998_is_maximal_and_complement_unique():
+    # The whole theorem in one sweep: missing 3 heads, exactly ONE of
+    # the 64261 normalised configurations survives (64259 forced-call
+    # contradictions, 1 killed by parity) — and the survivor is the bob
+    # course through rounds, precisely the complement of the explicit
+    # 4998. So 4998 is the longest bobs-only round block of Grandsire
+    # Triples, and any 4998's omitted heads are a single bob course,
+    # uniquely up to relabelling.
+    m = rings.METHODS["Grandsire Triples"]
+    cert = rings.qset_deficit_certificate(m, "b", 3)
+    assert cert["configs"] == 64261
+    assert cert["forced"] == 64259
+    assert cert["parity"] == 1
+    assert len(cert["open_configs"]) == 1
+    gb = rings.head_perm(m, "b")
+    h, bob_course = rings.rounds(7), set()
+    for _ in range(3):
+        bob_course.add(h)
+        h = rings.compose(h, gb)
+    assert h == rings.rounds(7)
+    assert set(cert["open_configs"][0]) == bob_course
+
+
+def test_deficit_certificate_scope():
+    # missing=0 is Thompson's certificate again, by parity, wherever it
+    # applied; and the sharper deficits transfer: Grandsire Doubles has
+    # no 11-lead bobs-only block (certificate AND exhaustive search),
+    # and at 10 leads the certificate is honestly silent — one open
+    # configuration whose head-level successor map genuinely works —
+    # while search shows no true 100 exists: Doubles leads share rows
+    # (multiplicity {2,3}), a row-level obstruction the head-level
+    # certificate cannot see. Plain Bob Minor kills 1 and 2 by forced
+    # calls alike.
+    gd = rings.METHODS["Grandsire Doubles"]
+    pb = rings.METHODS["Plain Bob Minor"]
+    for m in (gd, pb):
+        cert = rings.qset_deficit_certificate(m, "b", 0)
+        assert (cert["parity"], cert["block_impossible"]) == (1, True)
+    assert rings.qset_deficit_certificate(gd, "b", 1)["block_impossible"]
+    assert rings.search_extents(gd, "pb", target=110) == []
+    cert = rings.qset_deficit_certificate(gd, "b", 2)
+    assert not cert["block_impossible"]
+    assert [
+        [rings.row_str(h) for h in oc] for oc in cert["open_configs"]
+    ] == [["12345", "14523"]]
+    assert rings.search_extents(gd, "pb", target=100) == []
+    for k in (1, 2):
+        cert = rings.qset_deficit_certificate(pb, "b", k)
+        assert cert["forced"] == cert["configs"]
+        assert cert["block_impossible"]
+
+
 def test_grandsire_extent_needs_singles():
     g = rings.METHODS["Grandsire Doubles"]
     found = rings.search_extents(g, "pbs")
