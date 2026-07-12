@@ -363,6 +363,50 @@ def test_4998_is_maximal_and_complement_unique():
     assert set(cert["open_configs"][0]) == bob_course
 
 
+def test_4998_realises_the_open_configuration():
+    # Glue between the explicit 4998 and the k=3 sweep: relabelling the
+    # 4998 by the inverse of its missing course's head sends its omitted
+    # heads onto the bob course through rounds — the unique open
+    # configuration — and its calling then satisfies every call the
+    # certificate forces. Why the bob course escapes the k<=2
+    # contradictions: a missing head's bob-predecessor lies in the
+    # missing course itself (a gb-orbit), so the plain-forcing half of
+    # the predecessor conflict vanishes; only P^-1 forces, bob floods
+    # each broken Q-set, and just 12 calls are forced in all.
+    m = rings.METHODS["Grandsire Triples"]
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    sigma = rings.compose(gp, rings.inverse(gb))
+    calling = (
+        "pbppbbppppbbpbbppbbpbbppbbpbbppbbpbppppbpppbbppbbppppbbppbp"
+        "bbppppbpbbpbbppppbbpbbppbbpbpppbpppbbpbbpbbpppbppbpbbpbpbpp"
+        "ppbpbbpppbpppbbppbbppbppbbpbbpbbppbbpbppbpppbpbbppbppbppppb"
+        "bppbbppbpbpbbppbbpbbppbbpbbpbppppbpbbpppbbppbbppppbpbpbppbp"
+        "pbpbpbbpppbppppbbpbbppbppbpbpbbpbbpbbppbbpbbpbpbbppbbpbbppb"
+        "ppbppbpbbpbbppbppbbppbbpppbbpppbpbbppppbbpppbbpbpbbppppbpbb"
+        "ppb"
+    )
+    rows = rings.touch(m, calling)
+    heads = [rows[i] for i in range(0, len(rows) - 1, 14)]
+    lam = rings.inverse(tuple(rings.bell_from_char(c) for c in "1346725"))
+    call_of = {rings.compose(lam, h): c for h, c in zip(heads, calling)}
+    missing = set()
+    h = rings.rounds(7)
+    for _ in range(3):
+        missing.add(h)
+        h = rings.compose(h, gb)
+    assert not missing & set(call_of)
+    assert len(call_of) == 357
+    forced = {}
+    for mm in missing:
+        assert rings.compose(mm, rings.inverse(gb)) in missing
+        hb = rings.compose(mm, rings.inverse(gp))
+        while hb not in forced and hb not in missing:
+            forced[hb] = "b"
+            hb = rings.compose(hb, rings.inverse(sigma))
+    assert len(forced) == 12
+    assert all(call_of[h] == c for h, c in forced.items())
+
+
 def test_deficit_certificate_scope():
     # missing=0 is Thompson's certificate again, by parity, wherever it
     # applied; and the sharper deficits transfer: Grandsire Doubles has
