@@ -383,7 +383,12 @@ def qset_deficit_certificate(method, call="b", missing=1):
     no 5026, no 5012 — and missing 3 leaves exactly ONE open
     configuration, the bob course through rounds, which the known 4998
     realises. So 4998 is the longest bobs-only round block, and its
-    complement is a single bob course, uniquely up to relabelling."""
+    complement is a single bob course, uniquely up to relabelling.
+    Missing 4 (a ~500s sweep) leaves exactly two open configurations,
+    and both are realised by explicit 4984s (see the tests): at
+    Triples, openness is sharp, because every cross-lead row clash
+    coincides with a next-head injectivity violation — row truth is
+    head truth there, unlike at Doubles."""
     from itertools import combinations
 
     gp = head_perm(method, "p")

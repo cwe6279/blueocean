@@ -436,6 +436,102 @@ def test_deficit_certificate_scope():
         assert cert["block_impossible"]
 
 
+def test_row_truth_is_head_truth_bobs_only_grandsire_triples():
+    # The lemma that makes head-level certificates EXACT at Triples:
+    # every row lies in exactly two (head, call) leads; a head's plain
+    # and bob leads share their first 13 rows, and the only cross-head
+    # sharing is the final body row of plain-from-h, which is also the
+    # final body row of bob-from-sigma(h) — the very pair 'plained h
+    # with sigma(h) bobbed' that injectivity of the next-head map
+    # already forbids. So ANY call assignment whose next-head map is
+    # injective rings distinct rows: row truth = head truth, and the
+    # deficit certificate's open configurations are genuinely
+    # realisable (no Doubles-style row-level trap on 7 bells).
+    m = rings.METHODS["Grandsire Triples"]
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    sigma = rings.compose(gp, rings.inverse(gb))
+    heads, _ = rings.reachable_rows(m, "pb")
+    bodies = {}
+    for h in heads:
+        for c in "pb":
+            bodies[(h, c)] = [h] + list(rings.lead(h, m.lead_changes(c)))[:-1]
+    owners = {}
+    for key, body in bodies.items():
+        for r in body:
+            owners.setdefault(r, []).append(key)
+    assert len(owners) == 5040
+    assert all(len(o) == 2 for o in owners.values())
+    cross = [o for o in owners.values() if o[0][0] != o[1][0]]
+    assert len(cross) == 360
+    for pair in cross:
+        (hp, cp), (hb, cb) = sorted(pair, key=lambda k: k[1], reverse=True)
+        assert (cp, cb) == ("p", "b")
+        assert rings.compose(hp, sigma) == hb
+        shared = set(bodies[(hp, "p")]) & set(bodies[(hb, "b")])
+        assert shared == {bodies[(hp, "p")][13]} == {bodies[(hb, "b")][13]}
+
+
+def test_4984_exists_and_comes_in_two_kinds():
+    # The k=4 question answered: 4984s EXIST. The deficit certificate's
+    # missing=4 sweep (513s, journal 2026-07-12) leaves exactly two
+    # open configurations, and hillclimbing over free-Q-set toggles for
+    # a next-head map with five cycles (four fixed missing heads + one
+    # 356-cycle) realises BOTH — row truth is free by the lemma above.
+    # So bobs-only Grandsire Triples lengths run ..., 4984, 4998, and
+    # then nothing until impossibility; and unlike the 4998 (complement
+    # a bob course, one class), the 4984s come in exactly two
+    # inequivalent complement classes, neither of which is itself a
+    # touch (no length-4 word in gp, gb is the identity).
+    m = rings.METHODS["Grandsire Triples"]
+    configs = {
+        "A": {"1234567", "1243765", "1657423", "1675324"},
+        "B": {"1234567", "1456372", "1637524", "1752346"},
+    }
+    callings = {
+        "A": (
+            "pppbpbppbppppbpbbppppbppppbppppbppbbppppbbpbbppppbppbppbpbb"
+            "ppppbppppbbppppbbppbbpppbpbbppppbbpbpppbppppbbpbppbpbppbbpb"
+            "pbppppbbppbppbpbpbppbppppbppppbbpbppbbppppbpbppppbbppbppppb"
+            "bpppbppppbpbppbbppppbbpbbppbbpbbppbbpbpbpbbppppbpbbppbpbppb"
+            "ppppbpbpbppbbpbppppbbpbpbpbbpbppbpppbbppppbbpppbppppbpppbpp"
+            "bbppbppppbppppbpppbppbppppbbpbbppbbpbppppbppppbbpbbppppbbpp"
+            "bb"
+        ),
+        "B": (
+            "bppbppppbbpbbppbbpbbppbbpbbppbbpbpbbppbppbpbpbppbppbpbpppbp"
+            "pbppbbpbbppbbpbpppbbpbppbbpppbbpbppppbbpbbppbbppbpbpbbppbpp"
+            "ppbbpbppppbppbbpbppppbpbpbbpbpppbpbpbbpbpbpbbpppbpbpppbbppp"
+            "pbbpppbpbbpbbppbpbbppbbpbbppbbpbbppbbpbbpppbbpppbbppppbpppp"
+            "bpbbpppbpbpbbpbpbpbbpbpppbpbbppbpbpppbbpbpbpbbpbppppbppppbp"
+            "pbbpbppppbpbppbpbbppppbppbbpbppbpppbbpbbpbpbppbbpbppbbpbbpp"
+            "pb"
+        ),
+    }
+    heads_all, _ = rings.reachable_rows(m, "pb")
+    norm_classes = {}
+    for name, calling in callings.items():
+        assert len(calling) == 356
+        rows = rings.touch(m, calling)
+        assert rows[-1] == rings.rounds(7)
+        assert rings.is_true(rows)
+        assert len(rows) - 1 == 4984
+        heads = {rows[i] for i in range(0, len(rows) - 1, 14)}
+        assert len(heads) == 356
+        omitted = heads_all - heads
+        assert len(omitted) == 4
+        norms = {
+            frozenset(
+                rings.row_str(rings.compose(rings.inverse(o), x))
+                for x in omitted
+            )
+            for o in omitted
+        }
+        # each complement class is closed under its own normalisations
+        assert norms == {frozenset(configs[name])}
+        norm_classes[name] = norms
+    assert norm_classes["A"] != norm_classes["B"]
+
+
 def test_grandsire_extent_needs_singles():
     g = rings.METHODS["Grandsire Doubles"]
     found = rings.search_extents(g, "pbs")
