@@ -6,6 +6,27 @@ import os
 
 import rings
 
+# The celebrated longest bobs-only touch of Grandsire Triples (357
+# leads) and one of the two 4984s (356 leads); shared by several tests.
+TOUCH_4998 = (
+    "pbppbbppppbbpbbppbbpbbppbbpbbppbbpbppppbpppbbppbbppppbbppbp"
+    "bbppppbpbbpbbppppbbpbbppbbpbpppbpppbbpbbpbbpppbppbpbbpbpbpp"
+    "ppbpbbpppbpppbbppbbppbppbbpbbpbbppbbpbppbpppbpbbppbppbppppb"
+    "bppbbppbpbpbbppbbpbbppbbpbbpbppppbpbbpppbbppbbppppbpbpbppbp"
+    "pbpbpbbpppbppppbbpbbppbppbpbpbbpbbpbbppbbpbbpbpbbppbbpbbppb"
+    "ppbppbpbbpbbppbppbbppbbpppbbpppbpbbppppbbpppbbpbpbbppppbpbb"
+    "ppb"
+)
+TOUCH_4984_A = (
+    "pppbpbppbppppbpbbppppbppppbppppbppbbppppbbpbbppppbppbppbpbb"
+    "ppppbppppbbppppbbppbbpppbpbbppppbbpbpppbppppbbpbppbpbppbbpb"
+    "pbppppbbppbppbpbpbppbppppbppppbbpbppbbppppbpbppppbbppbppppb"
+    "bpppbppppbpbppbbppppbbpbbppbbpbbppbbpbpbpbbppppbpbbppbpbppb"
+    "ppppbpbpbppbbpbppppbbpbpbpbbpbppbpppbbppppbbpppbppppbpppbpp"
+    "bbppbppppbppppbpppbppbppppbbpbbppbbpbppppbppppbbpbbppppbbpp"
+    "bb"
+)
+
 
 def test_tokenize():
     assert rings.tokenize("x14x14") == ["x", (1, 4), "x", (1, 4)]
@@ -270,15 +291,7 @@ def test_grandsire_triples_bobs_only_4998():
     # the celebrated longest bobs-only touch of Grandsire Triples —
     # the extent minus one bob course, exactly as parity dictates.
     m = rings.METHODS["Grandsire Triples"]
-    calling = (
-        "pbppbbppppbbpbbppbbpbbppbbpbbppbbpbppppbpppbbppbbppppbbppbp"
-        "bbppppbpbbpbbppppbbpbbppbbpbpppbpppbbpbbpbbpppbppbpbbpbpbpp"
-        "ppbpbbpppbpppbbppbbppbppbbpbbpbbppbbpbppbpppbpbbppbppbppppb"
-        "bppbbppbpbpbbppbbpbbppbbpbbpbppppbpbbpppbbppbbppppbpbpbppbp"
-        "pbpbpbbpppbppppbbpbbppbppbpbpbbpbbpbbppbbpbbpbpbbppbbpbbppb"
-        "ppbppbpbbpbbppbppbbppbbpppbbpppbpbbppppbbpppbbpbpbbppppbpbb"
-        "ppb"
-    )
+    calling = TOUCH_4998
     assert len(calling) == 357
     rows = rings.touch(m, calling)
     assert rows[-1] == rings.rounds(7)
@@ -376,15 +389,7 @@ def test_4998_realises_the_open_configuration():
     m = rings.METHODS["Grandsire Triples"]
     gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
     sigma = rings.compose(gp, rings.inverse(gb))
-    calling = (
-        "pbppbbppppbbpbbppbbpbbppbbpbbppbbpbppppbpppbbppbbppppbbppbp"
-        "bbppppbpbbpbbppppbbpbbppbbpbpppbpppbbpbbpbbpppbppbpbbpbpbpp"
-        "ppbpbbpppbpppbbppbbppbppbbpbbpbbppbbpbppbpppbpbbppbppbppppb"
-        "bppbbppbpbpbbppbbpbbppbbpbbpbppppbpbbpppbbppbbppppbpbpbppbp"
-        "pbpbpbbpppbppppbbpbbppbppbpbpbbpbbpbbppbbpbbpbpbbppbbpbbppb"
-        "ppbppbpbbpbbppbppbbppbbpppbbpppbpbbppppbbpppbbpbpbbppppbpbb"
-        "ppb"
-    )
+    calling = TOUCH_4998
     rows = rings.touch(m, calling)
     heads = [rows[i] for i in range(0, len(rows) - 1, 14)]
     lam = rings.inverse(tuple(rings.bell_from_char(c) for c in "1346725"))
@@ -488,15 +493,7 @@ def test_4984_exists_and_comes_in_two_kinds():
         "B": {"1234567", "1456372", "1637524", "1752346"},
     }
     callings = {
-        "A": (
-            "pppbpbppbppppbpbbppppbppppbppppbppbbppppbbpbbppppbppbppbpbb"
-            "ppppbppppbbppppbbppbbpppbpbbppppbbpbpppbppppbbpbppbpbppbbpb"
-            "pbppppbbppbppbpbpbppbppppbppppbbpbppbbppppbpbppppbbppbppppb"
-            "bpppbppppbpbppbbppppbbpbbppbbpbbppbbpbpbpbbppppbpbbppbpbppb"
-            "ppppbpbpbppbbpbppppbbpbpbpbbpbppbpppbbppppbbpppbppppbpppbpp"
-            "bbppbppppbppppbpppbppbppppbbpbbppbbpbppppbppppbbpbbppppbbpp"
-            "bb"
-        ),
+        "A": TOUCH_4984_A,
         "B": (
             "bppbppppbbpbbppbbpbbppbbpbbppbbpbpbbppbppbpbpbppbppbpbpppbp"
             "pbppbbpbbppbbpbpppbbpbppbbpppbbpbppppbbpbbppbbppbpbpbbppbpp"
@@ -530,6 +527,148 @@ def test_4984_exists_and_comes_in_two_kinds():
         assert norms == {frozenset(configs[name])}
         norm_classes[name] = norms
     assert norm_classes["A"] != norm_classes["B"]
+
+
+def test_bobs_only_length_spectrum_grandsire_triples():
+    # WHICH lead-counts L admit a bobs-only round block? Row truth =
+    # head truth turns this into pure graph theory: a block of L leads
+    # is exactly a simple L-cycle through rounds in the 360-head
+    # digraph with edges h -> h.gp, h -> h.gb (in a cycle every vertex
+    # has in-degree 1, so the forbidden pair 'h plained, sigma(h)
+    # bobbed' — both feeding h.gp — cannot occur). Left-translation
+    # moves any cycle onto rounds, so the spectrum is the digraph's
+    # cycle spectrum. Answer: L works iff L in {3, 5, 8, 12} or
+    # 15 <= L <= 357. Proof: exhaustive DFS below settles L <= 22
+    # (killing 1, 2, 4, 6, 7, 9-11, 13, 14); chord-closure from the
+    # known 356/357-cycles witnesses everything from 23 to 348 except
+    # a handful near the top; stored callings (found by chord+ear
+    # surgery and Q-set-toggle hillclimbs) witness 344 and 349-355;
+    # and 358, 359, 360 are the deficit/Thompson theorems above.
+    m = rings.METHODS["Grandsire Triples"]
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    heads, _ = rings.reachable_rows(m, "pb")
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+    P = [idx[rings.compose(h, gp)] for h in H]
+    B = [idx[rings.compose(h, gb)] for h in H]
+    root = idx[rings.rounds(7)]
+
+    # exhaustive small-cycle census through rounds, L <= 22
+    small = set()
+    onpath = [False] * n
+    onpath[root] = True
+
+    def dfs(v, depth):
+        for w in (P[v], B[v]):
+            if w == root:
+                small.add(depth + 1)
+            elif not onpath[w] and depth + 1 < 22:
+                onpath[w] = True
+                dfs(w, depth + 1)
+                onpath[w] = False
+
+    dfs(root, 0)
+    assert small == {3, 5, 8, 12, 15, 16, 17, 18, 19, 20, 21, 22}
+
+    # stored witnesses for the stubborn lengths, verified end to end
+    hard = {
+        344: "pppbbpbppppbppppbbpbpbpppbpbbppbbpbpbbppbppppbppbbppbbppppb"
+             "bppppbbppppbbpbpppbppppbbppppbbpppbbpbbpppbbppbbppbppbbpbpp"
+             "pbbpbppbpbbppbppbbppbpppbppppbbppbbpppbbpppbpppbbppbbpppbbp"
+             "bpbpbbppbpbbpppbbpbppppbppbpbppppbbppbppbpbbpbppbbpbpbpbbpb"
+             "ppbbppbbppppbppbppbpbbpbbppppbppppbpbbppbpbbpbbpbppppbpbbpp"
+             "ppbppppbppbppbpbppbbpbpbpppbppbbppbbppppbbppbppbp",
+        349: "bppbpbppbbpbpbpppbppbbppbbppppbbppbpbbppppbbpbpbpppbpbbppbb"
+             "pbpbbppbppppbppbbppbbppppbbppppbbppppbbpbpppbppppbbppppbbpp"
+             "pbbpbbpppbbppbbppbppbbpbpppbbpbppbpbbppbppbbppbpppbppppbbpp"
+             "bbpppbbpppbpppbbppbbpppbbpbpbpbbppbpbbpppbbpbppppbppbpbpppp"
+             "bbppbppbpbbpbppbbpbpbpbbpbppbbppbbppppbppbppbpbbpbbppppbppp"
+             "pbpbbppbpbbpbbpbppppbpbbppppbppppbpbpppbpbbpppbbpbpppb",
+        350: "pbpbppppbpbbpppbpppbbppbbppbppbbpbbpbbppbbpbppbpppbpbbppbpp"
+             "bppppbbppbbppbpbpbbppbbpbbppbbpbbpbppppbpbbpppbbppbbppppbpb"
+             "pbppbppbpbpbbpppbppppbbpbbppbppbpbpbbpbbpbbppbbpbbpbpbbppbb"
+             "pbbppbppbppbpbbpbbppbppbbppbbpppbbpppbpbbppppbbpppbbpbpbbpp"
+             "ppbpbbppbpbppbbppppbbpbbppbbpbbppbbpbbppbbpbppppbpppbbppbbp"
+             "pppbbppbpbbppppbpbbpbbppppbbpbbppbbpbpppbpppbbpbbpbpbbp",
+        351: "pbppbbppbbpppbbpppbpbbppppbbpppbbpbpbbppppbpbbppbpbppbbpppp"
+             "bbpbbppbbpbbppbbpbbppbbpbppppbpbppbbppbpbbppppbpbbpbbppppbb"
+             "pbbppbbpbpppbpppbbpbbpbbpppbppbpbbpbpbppppbpbbpppbpppbbppbb"
+             "ppbppbbpbbpbbppbbpbppbpppbpbbppbppbppppbbppbbppbpbpbbppbbpb"
+             "bppbbpbbpbppppbpbbpppbbppbbppppbpbpbppbppbpbpbbpppbppppbbpb"
+             "bppbppbpbpbbpbbpbbppbbpbbpbpbbppbbpbbppbppbppbbpbbppbbpb",
+        352: "pppbbpbppbbpbppbbppppbppppbpppbbppbbppbpbpbbppppbppppbbpppb"
+             "bpppbbpppbppbppppbbpbpbppbbpbbppbbpbpbbpppbbpbbppbpbppbbpbb"
+             "ppbpbbppbppppbpppbppppbpbpppbppbbpppbbpbpbbppbbpbbpbpbppbbp"
+             "bppbbpppbppppbppbppppbpbbppppbppbppbbpbbpbbppbpppbpbppbbppp"
+             "bppppbpppbbppbpbbppbbpbbppbpbppbbpbbppbpbbpbbppppbbpbbppbpp"
+             "ppbbppbbppppbbpbpppbppbppbpbppbbppbbppppbpbppbpbbpppbpbbp",
+        353: "pbpppbppbppppbbpbbppbbpbppppbppppbbpbbppppbbppbbpppbpbppbpp"
+             "ppbpbbppppbppppbppppbppbbppppbbpbbppppbppbppbpbbppppbppppbb"
+             "ppppbbppbbpppbpbbppppbbpbpppbppppbbpbppbpbppbbpbpbppppbbppb"
+             "ppbpbpbppbppppbppppbbpbppbbppbbppppbpbppbbppppbbpbbppbbpbbp"
+             "pbbpbpbpbbppppbpbbppbpbppbppppbpbpbppbbpbppppbbpbpbpbbpbppb"
+             "pppbbppppbbpppbppppbpppbppbbppbppppbpbbpbppppbbppbppppbbpb",
+        354: "bppbbpbpppbpppbbpbbpbpbbppbpbppppbpbbpppbpppbbppbbppbppbbpb"
+             "bpbbppbbpbppbpppbpbbppbppbppppbbppbbppbpbpbbppbbpbbppbbpbbp"
+             "bppppbpbbpppbbppbbppppbpbpbppbppbpbpbbpppbppppbbpbbppbppbpb"
+             "pbbpbbpbbppbbpbbpbpbbppbbpbbppbppbppbpbbpbbppbppbbppbbpppbb"
+             "pppbpbbppppbbpppbbpbpbbppppbpbbppbpbppbbppppbbpbbppbbpbbppb"
+             "bpbbppbbpbppppbpppbbppbbppppbbppbpbbppppbpbbpbbppbppbppbpbp",
+        355: "bbppppbbppbppbbpbbppppbpbbpppbbpbppppbppppbbpbpbpppbpbbppbb"
+             "pbpbbppbppppbppbbppbbppppbbppppbbppppbbpbpppbppppbbppppbbpp"
+             "pbbpbbpppbbppbbppbppbbpbpppbbpbppbpbbppbppbbppbpppbppppbbpp"
+             "bbpppbbpppbpppbbppbbpppbbpbpbpbbppbpbbpppbbpbppppbppbpbpppp"
+             "bbppbppbpbbpbppbbpbpbpbbpbppbbppbbppppbppbppbpbbpbbppppbppp"
+             "pbpbbppbpbbpbbpbppppbpbbppppbppppbppbppbpbppbbpbpbpppbppbbpp",
+    }
+    achieved = set(small)
+    for L, calling in hard.items():
+        assert len(calling) == L
+        rows = rings.touch(m, calling)
+        assert rows[-1] == rings.rounds(7)
+        assert rings.is_true(rows)
+        assert len(rows) - 1 == 14 * L
+        achieved.add(L)
+
+    # chord closure: an alternate edge landing back on a cycle closes
+    # a shorter cycle; iterating from the 3-, 5-, 356- and 357-cycles
+    # witnesses every remaining length. Each new cycle is checked to
+    # be a genuine simple cycle in the digraph, which by the row-truth
+    # lemma IS a true touch (translated to pass through rounds).
+    def cycle_of(calling):
+        v, cyc = root, []
+        for c in calling:
+            cyc.append(v)
+            v = P[v] if c == "p" else B[v]
+        assert v == root
+        return cyc
+
+    from collections import deque
+    queue = deque([
+        cycle_of("bbb"),
+        cycle_of("ppppp"),
+        cycle_of(TOUCH_4984_A),
+        cycle_of(TOUCH_4998),
+    ])
+    achieved.update(len(c) for c in queue)
+    while queue:
+        C = queue.popleft()
+        ln = len(C)
+        pos = {v: i for i, v in enumerate(C)}
+        assert len(pos) == ln
+        assert all(C[(i + 1) % ln] in (P[v], B[v]) for i, v in enumerate(C))
+        for i, v in enumerate(C):
+            alt = B[v] if P[v] == C[(i + 1) % ln] else P[v]
+            j = pos.get(alt)
+            if j is None or j == (i + 1) % ln:
+                continue
+            L = (i - j) % ln + 1
+            if L not in achieved:
+                achieved.add(L)
+                queue.append([C[(j + t) % ln] for t in range(L)])
+
+    assert achieved == {3, 5, 8, 12} | set(range(15, 358))
 
 
 def test_grandsire_extent_needs_singles():
