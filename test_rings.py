@@ -671,6 +671,151 @@ def test_bobs_only_length_spectrum_grandsire_triples():
     assert achieved == {3, 5, 8, 12} | set(range(15, 358))
 
 
+def test_whole_qset_spectrum_near_the_ends():
+    # Which lengths admit a WHOLE-Q-SET touch — a bobs-only round
+    # block whose calling is constant on every Q-set it meets, i.e.
+    # extends to a permutation F~ of all 360 heads (the callings that
+    # Q-set-toggle search can reach)? Near the top this spectrum is
+    # strictly smaller than the full one, which is why 350 and
+    # 353/354 resisted the toggle hillclimbs on 2026-07-14.
+    #
+    # Impossibility: toggling a Q-set composes F~ with a 5-cycle on
+    # it (B = P.sigma^-1, verified below), an even permutation, so
+    # every whole-Q-set F~ has the sign of the plain map and, on 360
+    # points, a cycle count of fixed parity — even, like the 72 plain
+    # courses. A whole-Q-set touch of L leads puts rounds on an
+    # L-cycle of F~, so the 360 - L complement heads split into an
+    # ODD number of F~-cycles; each is a simple digraph cycle, and by
+    # translation onto rounds the DFS below shows no cycle has length
+    # in {1, 2, 4, 6, 7, 9, 10, 11, 13, 14}. Hence the complement
+    # cannot have size 0 (an odd number of cycles is at least one),
+    # 1, 2, 4, 6 or 7 (no cycle lengths sum to these), or 10 (not a
+    # length; three or more cycles total >= 9 but never 10): no
+    # whole-Q-set touch of 360 (Thompson restricted to this class,
+    # by a two-line argument), 359, 358, 356, 354, 353 or 350.
+    #
+    # Sufficiency: stored toggle vectors (72 bits, one per Q-set)
+    # witness every other length in [344, 360) plus both small-end
+    # survivors 8 and 12; 3 is the all-bob F~ (a bob course), 5 the
+    # all-plain, and 357 the 4998 itself, whose calling is checked to
+    # be whole-Q-set. The complement arithmetic is sharp: 351 = 360 -
+    # (3+3+3), 349 = 360 - (3+3+5), 347 = 360 - (3+5+5), 346 = 360 -
+    # (3+3+8), 344 = 360 - (3+5+8) — every sum an odd number of
+    # genuine cycle lengths, exactly as the parity invariant demands.
+    m = rings.METHODS["Grandsire Triples"]
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    sigma = rings.compose(gp, rings.inverse(gb))
+    heads, _ = rings.reachable_rows(m, "pb")
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+    P = [idx[rings.compose(h, gp)] for h in H]
+    B = [idx[rings.compose(h, gb)] for h in H]
+    S = [idx[rings.compose(h, sigma)] for h in H]
+    Si = [0] * n
+    for i in range(n):
+        Si[S[i]] = i
+    root = idx[rings.rounds(7)]
+    # a toggle is composition with the 5-cycle sigma^-1 on the Q-set
+    assert all(B[v] == P[Si[v]] for v in range(n))
+    orbit, orbits = [-1] * n, []
+    for i in range(n):
+        if orbit[i] >= 0:
+            continue
+        o, j = [], i
+        while orbit[j] < 0:
+            orbit[j] = len(orbits)
+            o.append(j)
+            j = S[j]
+        orbits.append(o)
+    assert len(orbits) == 72 and all(len(o) == 5 for o in orbits)
+
+    # cycle lengths through rounds up to 14: {3, 5, 8, 12} only
+    small = set()
+    onpath = [False] * n
+    onpath[root] = True
+
+    def dfs(v, depth):
+        for w in (P[v], B[v]):
+            if w == root:
+                small.add(depth + 1)
+            elif not onpath[w] and depth + 1 < 14:
+                onpath[w] = True
+                dfs(w, depth + 1)
+                onpath[w] = False
+
+    dfs(root, 0)
+    assert small == {3, 5, 8, 12}
+
+    witnesses = {
+        3: "1" * 72,
+        5: "0" * 72,
+        8: "00010100100010010110110101100111100001000000011100"
+           "1100010011001010010100",
+        12: "11001001000111111001101001111111000000001010100101"
+            "1011011000010111110011",
+        344: "0001011001100100011010011100000000010111000011001"
+             "01000101100010011110101",
+        345: "0011101001011011000000011001000011010110100100001"
+             "11011001000010100101010",
+        346: "0001101101000011000101000111010000100001010110111"
+             "11011000001100110000010",
+        347: "0001100010110100110001100010010011001101000000110"
+             "01110001011000110001011",
+        348: "0000101101010011101011001010000000100000110010011"
+             "01001001000101111100111",
+        349: "0010101101000001000111011010010010000110010010110"
+             "10100010001100000101001",
+        351: "0011000101000110101001000111010010111101000111111"
+             "10100010110110010100000",
+        352: "0000000101101000100000011001010010001010010100110"
+             "01011010001111011111000",
+        355: "0100110010101110000010101100100100000010110101000"
+             "00010101101110001000101",
+    }
+    achieved = set()
+    for L, bits in witnesses.items():
+        F = [B[v] if bits[orbit[v]] == "1" else P[v] for v in range(n)]
+        cycles, done = [], [False] * n
+        for i in range(n):
+            if done[i]:
+                continue
+            c = []
+            while not done[i]:
+                done[i] = True
+                c.append(i)
+                i = F[i]
+            cycles.append(c)
+        assert len(cycles) % 2 == 0  # the parity invariant, in action
+        mine = next(c for c in cycles if root in c)
+        assert len(mine) == L
+        k = mine.index(root)
+        calling = "".join(
+            "b" if bits[orbit[v]] == "1" else "p"
+            for v in mine[k:] + mine[:k]
+        )
+        rows = rings.touch(m, calling)
+        assert rows[-1] == rings.rounds(7)
+        assert rings.is_true(rows)
+        assert len(rows) - 1 == 14 * L
+        achieved.add(L)
+
+    # the 4998 is itself whole-Q-set: its 357 used heads never split
+    # a Q-set between plain and bob
+    rows = rings.touch(m, TOUCH_4998)
+    call_of = {idx[rows[i * 14]]: c for i, c in enumerate(TOUCH_4998)}
+    assert all(
+        len({call_of[v] for v in o if v in call_of}) <= 1 for o in orbits
+    )
+    achieved.add(357)
+
+    ends = set(range(1, 15)) | set(range(344, 361))
+    assert achieved == ends & (
+        {3, 5, 8, 12} | set(range(344, 358))
+        - {350, 353, 354, 356}
+    )
+
+
 def test_grandsire_extent_needs_singles():
     g = rings.METHODS["Grandsire Doubles"]
     found = rings.search_extents(g, "pbs")
