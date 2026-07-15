@@ -856,6 +856,12 @@ def test_whole_qset_spectrum_near_the_ends():
     dfs(root, 0)
     assert small == {3, 5, 8, 12}
 
+    complements = {
+        3: [3] * 119, 5: [5] * 71,
+        344: [3, 5, 8], 345: [3, 3, 3, 3, 3], 346: [3, 3, 8],
+        347: [3, 5, 5], 348: [12], 349: [3, 3, 5], 351: [3, 3, 3],
+        352: [8], 355: [5],
+    }
     achieved = set()
     for L, bits in WHOLE_QSET_TOGGLES.items():
         F = [B[v] if bits[orbit[v]] == "1" else P[v] for v in range(n)]
@@ -872,6 +878,9 @@ def test_whole_qset_spectrum_near_the_ends():
         assert len(cycles) % 2 == 0  # the parity invariant, in action
         mine = next(c for c in cycles if root in c)
         assert len(mine) == L
+        if L in complements:
+            comp = sorted(len(c) for c in cycles if root not in c)
+            assert comp == complements[L]
         k = mine.index(root)
         calling = "".join(
             "b" if bits[orbit[v]] == "1" else "p"
