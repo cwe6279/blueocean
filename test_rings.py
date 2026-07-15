@@ -703,6 +703,82 @@ def test_bobs_only_length_spectrum_grandsire_triples():
     assert achieved == {3, 5, 8, 12} | set(range(15, 358))
 
 
+def test_short_bobs_only_touch_census_grandsire_triples():
+    # Refining the spectrum: not just WHICH small lead-counts occur,
+    # but exactly how many touches realise each. The depth-22 DFS
+    # (~1.5s) enumerates every bobs-only round block of at most 22
+    # leads. The short ones are astonishingly rigid — every touch of
+    # at most 15 leads is a k-part for some k >= 3:
+    #   3 = (b)^3 and 5 = (p)^5, uniquely (the two courses);
+    #   8 = (pb)^4, uniquely up to rotation — plain and bob strictly
+    #       alternating, so gp.gb has order 4;
+    #   12 = (pppb)^3, (ppb)^4 or (ppbb)^3, nothing else;
+    #   15 = (pbb)^5, uniquely up to rotation.
+    # The first touch with NO rotational symmetry has 16 leads (two
+    # full-period classes alongside four 2-parts), and at the prime
+    # length 17 all 17 callings are rotations of one asymmetric
+    # touch. Counts of callings (= cycles through rounds) and of
+    # rotation classes, exhaustively:
+    #   L        3  5  8  12  15  16  17  18  19   20   21   22
+    #   touches  1  1  2  11   3  64  17  33  95  530  497  495
+    #   classes  1  1  1   3   1   6   1   3   5   29   25   25
+    m = rings.METHODS["Grandsire Triples"]
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    heads, _ = rings.reachable_rows(m, "pb")
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+    P = [idx[rings.compose(h, gp)] for h in H]
+    B = [idx[rings.compose(h, gb)] for h in H]
+    root = idx[rings.rounds(7)]
+    callings = {}
+    onpath = [False] * n
+    onpath[root] = True
+    word = []
+
+    def dfs(v, depth):
+        for w, c in ((P[v], "p"), (B[v], "b")):
+            word.append(c)
+            if w == root:
+                callings.setdefault(depth + 1, []).append("".join(word))
+            elif not onpath[w] and depth + 1 < 22:
+                onpath[w] = True
+                dfs(w, depth + 1)
+                onpath[w] = False
+            word.pop()
+
+    dfs(root, 0)
+    assert {L: len(cs) for L, cs in callings.items()} == {
+        3: 1, 5: 1, 8: 2, 12: 11, 15: 3, 16: 64, 17: 17, 18: 33,
+        19: 95, 20: 530, 21: 497, 22: 495,
+    }
+    classes = {L: rings.rotation_classes(cs) for L, cs in callings.items()}
+    assert {L: len(c) for L, c in classes.items()} == {
+        3: 1, 5: 1, 8: 1, 12: 3, 15: 1, 16: 6, 17: 1, 18: 3,
+        19: 5, 20: 29, 21: 25, 22: 25,
+    }
+    assert callings[3] == ["bbb"]
+    assert callings[5] == ["ppppp"]
+    assert list(classes[8]) == ["bpbpbpbp"]
+    assert sorted(classes[12]) == [
+        "bbppbbppbbpp", "bppbppbppbpp", "bpppbpppbppp"
+    ]
+    assert list(classes[15]) == ["bbpbbpbbpbbpbbp"]
+
+    def period(w):
+        return next(
+            d for d in range(1, len(w) + 1)
+            if len(w) % d == 0 and w == w[:d] * (len(w) // d)
+        )
+
+    for L, cs in callings.items():
+        if L <= 15:
+            assert all(L // period(w) >= 3 for w in cs)
+    sym16 = sorted(len(w) // period(w) for w in classes[16])
+    assert sym16 == [1, 1, 2, 2, 2, 2]  # asymmetry first appears at 16
+    assert all(period(w) == 17 for w in callings[17])
+
+
 def test_whole_qset_spectrum_near_the_ends():
     # Which lengths admit a WHOLE-Q-SET touch — a bobs-only round
     # block whose calling is constant on every Q-set it meets, i.e.
