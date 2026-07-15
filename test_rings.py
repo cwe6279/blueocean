@@ -26,6 +26,38 @@ TOUCH_4984_A = (
     "bbppbppppbppppbpppbppbppppbbpbbppbbpbppppbppppbbpbbppppbbpp"
     "bb"
 )
+# Whole-Q-set callings, one 72-bit toggle vector per Q-set (in
+# sorted-head sigma-orbit order): bit q set means Q-set q is bobbed.
+# The cycle of the resulting next-head permutation through rounds has
+# the keyed length. Found by Q-set-toggle hillclimbs, 2026-07-15.
+WHOLE_QSET_TOGGLES = {
+    3: "1" * 72,
+    5: "0" * 72,
+    8: "00010100100010010110110101100111100001000000011100"
+       "1100010011001010010100",
+    12: "11001001000111111001101001111111000000001010100101"
+        "1011011000010111110011",
+    17: "00111101110111010000001000100111001010010001000111"
+        "0100111001100111000011",
+    344: "0001011001100100011010011100000000010111000011001"
+         "01000101100010011110101",
+    345: "0011101001011011000000011001000011010110100100001"
+         "11011001000010100101010",
+    346: "0001101101000011000101000111010000100001010110111"
+         "11011000001100110000010",
+    347: "0001100010110100110001100010010011001101000000110"
+         "01110001011000110001011",
+    348: "0000101101010011101011001010000000100000110010011"
+         "01001001000101111100111",
+    349: "0010101101000001000111011010010010000110010010110"
+         "10100010001100000101001",
+    351: "0011000101000110101001000111010010111101000111111"
+         "10100010110110010100000",
+    352: "0000000101101000100000011001010010001010010100110"
+         "01011010001111011111000",
+    355: "0100110010101110000010101100100100000010110101000"
+         "00010101101110001000101",
+}
 
 
 def test_tokenize():
@@ -694,9 +726,10 @@ def test_whole_qset_spectrum_near_the_ends():
     # whole-Q-set touch of 360 (Thompson restricted to this class,
     # by a two-line argument), 359, 358, 356, 354, 353 or 350.
     #
-    # Sufficiency: stored toggle vectors (72 bits, one per Q-set)
-    # witness every other length in [344, 360) plus both small-end
-    # survivors 8 and 12; 3 is the all-bob F~ (a bob course), 5 the
+    # Sufficiency: the stored WHOLE_QSET_TOGGLES vectors witness every
+    # other length in [344, 360) plus both small-end survivors 8 and
+    # 12 (and a 17, kept as a search seed for the complete-spectrum
+    # test below); 3 is the all-bob F~ (a bob course), 5 the
     # all-plain, and 357 the 4998 itself, whose calling is checked to
     # be whole-Q-set. The complement arithmetic is sharp: 351 = 360 -
     # (3+3+3), 349 = 360 - (3+3+5), 347 = 360 - (3+5+5), 346 = 360 -
@@ -747,34 +780,8 @@ def test_whole_qset_spectrum_near_the_ends():
     dfs(root, 0)
     assert small == {3, 5, 8, 12}
 
-    witnesses = {
-        3: "1" * 72,
-        5: "0" * 72,
-        8: "00010100100010010110110101100111100001000000011100"
-           "1100010011001010010100",
-        12: "11001001000111111001101001111111000000001010100101"
-            "1011011000010111110011",
-        344: "0001011001100100011010011100000000010111000011001"
-             "01000101100010011110101",
-        345: "0011101001011011000000011001000011010110100100001"
-             "11011001000010100101010",
-        346: "0001101101000011000101000111010000100001010110111"
-             "11011000001100110000010",
-        347: "0001100010110100110001100010010011001101000000110"
-             "01110001011000110001011",
-        348: "0000101101010011101011001010000000100000110010011"
-             "01001001000101111100111",
-        349: "0010101101000001000111011010010010000110010010110"
-             "10100010001100000101001",
-        351: "0011000101000110101001000111010010111101000111111"
-             "10100010110110010100000",
-        352: "0000000101101000100000011001010010001010010100110"
-             "01011010001111011111000",
-        355: "0100110010101110000010101100100100000010110101000"
-             "00010101101110001000101",
-    }
     achieved = set()
-    for L, bits in witnesses.items():
+    for L, bits in WHOLE_QSET_TOGGLES.items():
         F = [B[v] if bits[orbit[v]] == "1" else P[v] for v in range(n)]
         cycles, done = [], [False] * n
         for i in range(n):
@@ -809,11 +816,78 @@ def test_whole_qset_spectrum_near_the_ends():
     )
     achieved.add(357)
 
-    ends = set(range(1, 15)) | set(range(344, 361))
-    assert achieved == ends & (
-        {3, 5, 8, 12} | set(range(344, 358))
-        - {350, 353, 354, 356}
+    assert achieved == {3, 5, 8, 12, 17} | (
+        set(range(344, 358)) - {350, 353, 354, 356}
     )
+
+
+def test_whole_qset_spectrum_complete():
+    # The FULL whole-Q-set spectrum: L admits a whole-Q-set bobs-only
+    # round block iff L is in the length spectrum {3, 5, 8, 12} or
+    # [15, 357] MINUS {350, 353, 354, 356}. The four missing lengths
+    # are the parity theorem of the previous test (complements of
+    # size 10, 7, 6, 4 cannot be an odd number of digraph cycles);
+    # everything else is witnessed constructively here: breadth-first
+    # search over single-Q-set toggles from the stored vectors covers
+    # every remaining length in two generations (~36000 permutations
+    # F~, each cycle through rounds a genuine touch by the row-truth
+    # lemma). Along the way every F~ visited has its rounds-cycle
+    # length checked against the theorem: the forbidden lengths never
+    # appear, a 36000-fold empirical echo of the parity invariant.
+    m = rings.METHODS["Grandsire Triples"]
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    sigma = rings.compose(gp, rings.inverse(gb))
+    heads, _ = rings.reachable_rows(m, "pb")
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+    P = [idx[rings.compose(h, gp)] for h in H]
+    B = [idx[rings.compose(h, gb)] for h in H]
+    S = [idx[rings.compose(h, sigma)] for h in H]
+    root = idx[rings.rounds(7)]
+    orbit, norb = [-1] * n, 0
+    for i in range(n):
+        if orbit[i] >= 0:
+            continue
+        j = i
+        while orbit[j] < 0:
+            orbit[j] = norb
+            j = S[j]
+        norb += 1
+
+    def rounds_len(mask):
+        v, L = root, 0
+        while True:
+            v = B[v] if (mask >> orbit[v]) & 1 else P[v]
+            L += 1
+            if v == root:
+                return L
+
+    target = ({3, 5, 8, 12} | set(range(15, 358))) - {350, 353, 354, 356}
+    frontier = [
+        int(bits[::-1], 2) for _, bits in sorted(WHOLE_QSET_TOGGLES.items())
+    ]
+    visited = set(frontier)
+    achieved = {rounds_len(mk) for mk in frontier} | {357}
+    gen = 0
+    while target - achieved and gen < 3:
+        gen += 1
+        nxt = []
+        for mask in frontier:
+            for q in range(72):
+                nm = mask ^ (1 << q)
+                if nm in visited:
+                    continue
+                visited.add(nm)
+                L = rounds_len(nm)
+                assert L in target  # the theorem, checked in passing
+                if L not in achieved:
+                    achieved.add(L)
+                    nxt.append(nm)
+                elif len(nxt) < 4000 and gen < 3:
+                    nxt.append(nm)
+        frontier = nxt
+    assert gen == 2 and achieved == target
 
 
 def test_grandsire_extent_needs_singles():
