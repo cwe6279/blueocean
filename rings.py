@@ -540,6 +540,33 @@ def reversal_classes(callings):
     return classes
 
 
+def reversal_relabellings(method, calls="pb"):
+    """Relabellings of the bells that reverse every composition: the
+    rows t whose conjugation g -> t.g.t^-1 inverts the lead-head
+    permutation of each of `calls` at once. Such a t fixes rounds and
+    maps the head-digraph edge h -> h.g to an edge t.h.g.t^-1 ->
+    t.h.t^-1: every touch's calling, read backwards, is again a touch
+    of the same length and truth. For palindromic methods (Plain Bob,
+    Cambridge) this is no surprise — the method rung backwards is
+    itself, so compositions were always reversible — but it also holds
+    for Grandsire, which is NOT palindromic: t = 1257364 = (35)(47) is
+    the unique element of S_7 inverting both of Grandsire Triples'
+    lead-head permutations, so bobs-only touches of every length come
+    in mirror pairs (see the tests for the chiral census)."""
+    from itertools import permutations
+
+    gs = [head_perm(method, c) for c in calls]
+    gis = [inverse(g) for g in gs]
+    out = []
+    for t in permutations(range(1, method.stage + 1)):
+        ti = inverse(t)
+        if all(
+            compose(compose(t, g), ti) == gi for g, gi in zip(gs, gis)
+        ):
+            out.append(t)
+    return out
+
+
 def course(method):
     """Ring a method's plain blocks until rounds returns at the end of a
     full cycle of blocks. Returns the rows, rounds to rounds."""

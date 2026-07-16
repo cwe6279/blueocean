@@ -722,6 +722,15 @@ def test_short_bobs_only_touch_census_grandsire_triples():
     #   L        3  5  8  12  15  16  17  18  19   20   21   22
     #   touches  1  1  2  11   3  64  17  33  95  530  497  495
     #   classes  1  1  1   3   1   6   1   3   5   29   25   25
+    #   mirror   1  1  1   3   1   3   1   3   4   17   16   16
+    # The reversal relabelling t = (35)(47) (next test) closes every
+    # level under reading the calling backwards and pairs rotation
+    # classes into mirror classes. Chirality first appears alongside
+    # asymmetry: at 16 ALL six rotation classes are chiral (three
+    # mirror pairs — even the four 2-parts), while the lone 17-class,
+    # rotationally asymmetric, is nonetheless self-mirror: its
+    # reversal is one of its own rotations. Chiral pairs per L:
+    # 3 at 16, 1 at 19, 12 at 20, 9 at 21, 9 at 22.
     m = rings.METHODS["Grandsire Triples"]
     gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
     heads, _ = rings.reachable_rows(m, "pb")
@@ -777,6 +786,116 @@ def test_short_bobs_only_touch_census_grandsire_triples():
     sym16 = sorted(len(w) // period(w) for w in classes[16])
     assert sym16 == [1, 1, 2, 2, 2, 2]  # asymmetry first appears at 16
     assert all(period(w) == 17 for w in callings[17])
+
+    # reversal symmetry: every level closed under reading backwards
+    for L, cs in callings.items():
+        assert {c[::-1] for c in cs} == set(cs)
+    mirror = {L: rings.reversal_classes(cs) for L, cs in callings.items()}
+    assert {L: len(c) for L, c in mirror.items()} == {
+        3: 1, 5: 1, 8: 1, 12: 3, 15: 1, 16: 3, 17: 1, 18: 3,
+        19: 4, 20: 17, 21: 16, 22: 16,
+    }
+
+    def self_mirror(canon):
+        return canon[::-1] in {
+            canon[i:] + canon[:i] for i in range(len(canon))
+        }
+
+    chiral = {
+        L: sum(not self_mirror(c) for c in cls) // 2
+        for L, cls in classes.items()
+    }
+    assert chiral == {
+        3: 0, 5: 0, 8: 0, 12: 0, 15: 0, 16: 3, 17: 0, 18: 0,
+        19: 1, 20: 12, 21: 9, 22: 9,
+    }
+    assert not any(self_mirror(c) for c in classes[16])  # 16 all chiral
+    assert all(self_mirror(c) for c in classes[17])
+
+
+def test_reversal_relabelling_grandsire_triples():
+    # Grandsire is not palindromic — a lead rung backwards is not a
+    # Grandsire lead — yet its bobs-only compositions DO reverse: the
+    # calling of any true round block, read backwards, is again one.
+    # The reason is startlingly concrete: relabelling the bells by
+    # t = 1257364 = (35)(47) conjugates BOTH lead-head permutations
+    # to their inverses, so alpha: h -> t.h.t^-1 fixes rounds and
+    # reverses every edge of the 360-head digraph. Each simple
+    # L-cycle maps to a simple L-cycle traversed the other way, and a
+    # touch with calling c to a touch with calling reversed(c) — by
+    # the row-truth lemma, genuinely true touches. t is the ONLY
+    # element of all S_7 with this property; it is an involution and
+    # is itself a reachable lead head, so alpha is inner: its 8 fixed
+    # heads are exactly the centraliser of t in the head group. No
+    # label-SWAPPING reversal can exist for any relabelling or indeed
+    # any bijection of heads whatsoever: plain-only cycles are the
+    # 5-lead plain courses and bob-only cycles the 3-lead bob
+    # courses, and reversal preserves single-label cycle lengths.
+    m = rings.METHODS["Grandsire Triples"]
+    ts = rings.reversal_relabellings(m, "pb")
+    assert ts == [(1, 2, 5, 7, 3, 6, 4)]
+    t = ts[0]
+    ti = rings.inverse(t)
+    assert rings.compose(t, t) == rings.rounds(7)  # an involution
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    heads, _ = rings.reachable_rows(m, "pb")
+    assert t in heads
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+    P = [idx[rings.compose(h, gp)] for h in H]
+    B = [idx[rings.compose(h, gb)] for h in H]
+    Pi, Bi = [0] * n, [0] * n
+    for i in range(n):
+        Pi[P[i]], Bi[B[i]] = i, i
+    A = [idx[rings.compose(rings.compose(t, h), ti)] for h in H]
+    assert sorted(A) == list(range(n))  # heads closed under alpha
+    root = idx[rings.rounds(7)]
+    assert A[root] == root
+    assert all(A[P[v]] == Pi[A[v]] for v in range(n))  # plain reversed
+    assert all(A[B[v]] == Bi[A[v]] for v in range(n))  # bob reversed
+    fixed = [v for v in range(n) if A[v] == v]
+    centraliser = [
+        h for h in H if rings.compose(t, h) == rings.compose(h, t)
+    ]
+    assert len(fixed) == 8
+    assert [H[v] for v in fixed] == centraliser
+    assert t in {H[v] for v in fixed}
+
+    # reversal in action on the record touches: the 4998 and the
+    # 4984, callings read backwards, ring true end to end
+    for calling in (TOUCH_4998, TOUCH_4984_A):
+        rows = rings.touch(m, calling[::-1])
+        assert rows[-1] == rings.rounds(7)
+        assert rings.is_true(rows)
+        assert len(rows) - 1 == 14 * len(calling)
+
+    # no label-swapping reversal: single-label cycle lengths differ
+    def orbit_sizes(g):
+        sizes, seen = [], set()
+        for h in heads:
+            if h in seen:
+                continue
+            size, x = 0, h
+            while x not in seen:
+                seen.add(x)
+                x = rings.compose(x, g)
+                size += 1
+            sizes.append(size)
+        return set(sizes)
+
+    assert orbit_sizes(gp) == {5} and orbit_sizes(gb) == {3}
+
+    # the same reversal-by-relabelling exists for every stock
+    # single-block method — unique except at Minimus, where the tiny
+    # head group leaves room for three
+    counts = {
+        "Plain Bob Minimus": 3, "Plain Bob Doubles": 1,
+        "Plain Bob Minor": 1, "Grandsire Doubles": 1,
+        "Cambridge Surprise Minor": 1,
+    }
+    for name, k in counts.items():
+        assert len(rings.reversal_relabellings(rings.METHODS[name])) == k
 
 
 def test_whole_qset_spectrum_near_the_ends():
