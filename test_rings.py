@@ -898,6 +898,118 @@ def test_reversal_relabelling_grandsire_triples():
         assert len(rings.reversal_relabellings(rings.METHODS[name])) == k
 
 
+def test_singles_break_reversal_grandsire_triples():
+    # The mirror symmetry of the previous test is a bobs-only
+    # phenomenon. Admitting singles, the head group doubles — from
+    # A_6 (360 heads) to all 720 treble-led rows — and reversal
+    # BREAKS: no relabelling inverts all three lead-head permutations
+    # at once, and no bijection of heads whatsoever reverses the
+    # 3-labelled digraph. (Only gp has order 5 so a reversal must
+    # send plain edges to reversed plain edges; the deterministic
+    # extension of rounds -> rounds fails for both label pairings
+    # b->b and b->s, and left-translations move any anti-automorphism
+    # to one fixing rounds, so none exists at all.) The breakage is
+    # not merely abstract: in the exhaustive census of true touches
+    # with singles up to 10 leads, the 7 + 4 + 30 touches of 6, 8, 9
+    # leads all still reverse by coincidence, but ALL TEN true
+    # 10-lead touches fail — pbspspbsps is the shortest calling of a
+    # true touch (140 changes) whose reversal does not even come
+    # round. Singles also break the row-truth lemma the bobs-only
+    # theory leans on: ppppbpbssbb rings true while ppppbpbbsbs
+    # visits 11 distinct heads yet repeats a row (a bob lead and a
+    # single lead from different heads can share one).
+    m = rings.METHODS["Grandsire Triples"]
+    assert rings.reversal_relabellings(m, "pbs") == []
+    gp, gb, gs = (rings.head_perm(m, c) for c in "pbs")
+
+    def order(g):
+        x, k = g, 1
+        while x != rings.rounds(7):
+            x, k = rings.compose(x, g), k + 1
+        return k
+
+    assert (order(gp), order(gb), order(gs)) == (5, 3, 6)
+    heads, _ = rings.reachable_rows(m, "pbs")
+    assert len(heads) == 720 and all(h[0] == 1 for h in heads)
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+    T = {c: [idx[rings.compose(h, g)] for h in H]
+         for c, g in zip("pbs", (gp, gb, gs))}
+    inv = {}
+    for c, t in T.items():
+        inv[c] = [0] * n
+        for i, w in enumerate(t):
+            inv[c][w] = i
+    root = idx[rings.rounds(7)]
+
+    def anti(pairing):
+        A = [-1] * n
+        A[root] = root
+        stack = [root]
+        while stack:
+            v = stack.pop()
+            for c, d in pairing.items():
+                w, target = T[c][v], inv[d][A[v]]
+                if A[w] < 0:
+                    A[w] = target
+                    stack.append(w)
+                elif A[w] != target:
+                    return None
+        return A
+
+    assert anti({"p": "p", "b": "b", "s": "s"}) is None
+    assert anti({"p": "p", "b": "s", "s": "b"}) is None
+
+    def rev_returns(calling):
+        v = root
+        for c in reversed(calling):
+            v = T[c][v]
+        return v == root
+
+    stats = {}
+    onpath = [False] * n
+    onpath[root] = True
+    word = []
+
+    def dfs(v, depth):
+        for c in "pbs":
+            w = T[c][v]
+            word.append(c)
+            if w == root:
+                calling = "".join(word)
+                if "s" in calling and rings.is_true(
+                    rings.touch(m, calling)
+                ):
+                    k = "ok" if rev_returns(calling) else "cex"
+                    s = stats.setdefault(len(calling), [0, 0, None])
+                    s[0 if k == "ok" else 1] += 1
+                    if k == "cex" and s[2] is None:
+                        s[2] = calling
+            elif not onpath[w] and depth + 1 < 10:
+                onpath[w] = True
+                dfs(w, depth + 1)
+                onpath[w] = False
+            word.pop()
+
+    dfs(root, 0)
+    assert stats == {
+        6: [7, 0, None], 8: [4, 0, None], 9: [30, 0, None],
+        10: [0, 10, "pbspspbsps"],
+    }
+    rows = rings.touch(m, "pbspspbsps")
+    assert rows[-1] == rings.rounds(7) and rings.is_true(rows)
+    assert len(rows) - 1 == 140
+    assert rings.touch(m, "pbspspbsps"[::-1])[-1] != rings.rounds(7)
+
+    rows = rings.touch(m, "ppppbpbssbb")
+    assert rows[-1] == rings.rounds(7) and rings.is_true(rows)
+    assert rings.touch(m, "ppppbpbssbb"[::-1])[-1] != rings.rounds(7)
+    rows = rings.touch(m, "ppppbpbbsbs")
+    assert rows[-1] == rings.rounds(7) and not rings.is_true(rows)
+    assert len({tuple(rows[i * 14]) for i in range(11)}) == 11
+
+
 def test_whole_qset_spectrum_near_the_ends():
     # Which lengths admit a WHOLE-Q-SET touch — a bobs-only round
     # block whose calling is constant on every Q-set it meets, i.e.
