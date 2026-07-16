@@ -1206,6 +1206,99 @@ def test_whole_qset_spectrum_complete():
     assert gen == 2 and achieved == target
 
 
+def test_whole_qset_mirror_invariance_grandsire_triples():
+    # The reversal of a whole-Q-set touch is whole-Q-set. NOT because
+    # the mirror alpha respects Q-sets — it doesn't: alpha maps the
+    # sigma-orbits (Q-sets, sigma = gp.gb^-1) onto the orbits of
+    # tau = gp^-1.gb, the REVERSE Q-sets (h plained and h' bobbed
+    # collide at their PREDECESSORS iff h' = h.tau), a genuinely
+    # different partition into 72 fives. The theorem is the dual of
+    # forced-call propagation: the identity tau.gb^-1 = gp^-1 says
+    # the bob-predecessor of h.tau IS the plain-predecessor of h, so
+    # under any toggle permutation F~ (a whole-Q-set assignment on
+    # all 360 heads), if h is fed by its plain predecessor then
+    # h.tau's bob predecessor is already spoken for, forcing h.tau
+    # to be fed by its plain predecessor too: in-call p propagates
+    # forwards and in-call b backwards along each tau-orbit, and
+    # each closes around the finite orbit. In-calls are therefore
+    # constant on reverse Q-sets; the reversed touch's call at
+    # alpha(h) is exactly the in-call of h, and alpha carries
+    # tau-orbits back to sigma-orbits — so the reversed calling is
+    # whole-Q-set. With the reversal theorem this makes the
+    # whole-Q-set spectrum mirror-symmetric level by level, matching
+    # its palindromic look ({350,353,354,356} missing at the top,
+    # nothing extra at the bottom).
+    import random
+
+    m = rings.METHODS["Grandsire Triples"]
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    comp, inv = rings.compose, rings.inverse
+    sigma, tau = comp(gp, inv(gb)), comp(inv(gp), gb)
+    heads, _ = rings.reachable_rows(m, "pb")
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+    P = [idx[comp(h, gp)] for h in H]
+    B = [idx[comp(h, gb)] for h in H]
+    S = [idx[comp(h, sigma)] for h in H]
+    T = [idx[comp(h, tau)] for h in H]
+    Pi, Bi = [0] * n, [0] * n
+    for i in range(n):
+        Pi[P[i]], Bi[B[i]] = i, i
+    root = idx[rings.rounds(7)]
+
+    # the dual identity: bob-predecessor of h.tau = plain-pred of h
+    assert all(Bi[T[v]] == Pi[v] for v in range(n))
+
+    def orbits_of(M):
+        orb, out = [-1] * n, []
+        for i in range(n):
+            if orb[i] >= 0:
+                continue
+            o, j = [], i
+            while orb[j] < 0:
+                orb[j] = len(out)
+                o.append(j)
+                j = M[j]
+            out.append(o)
+        return orb, out
+
+    sorb, sorbs = orbits_of(S)
+    torb, torbs = orbits_of(T)
+    assert len(torbs) == 72 and all(len(o) == 5 for o in torbs)
+    t = (1, 2, 5, 7, 3, 6, 4)  # the reversal relabelling
+    A = [idx[comp(comp(t, H[v]), inv(t))] for v in range(n)]
+    qsets = {frozenset(o) for o in sorbs}
+    rev_qsets = {frozenset(o) for o in torbs}
+    assert {frozenset(A[v] for v in o) for o in sorbs} == rev_qsets
+    assert qsets != rev_qsets  # alpha does NOT respect Q-sets
+
+    random.seed(7)
+    masks = [
+        [c == "1" for c in bits] for bits in WHOLE_QSET_TOGGLES.values()
+    ] + [[random.random() < 0.5 for _ in range(72)] for _ in range(40)]
+    for mask in masks:
+        F = [B[v] if mask[sorb[v]] else P[v] for v in range(n)]
+        Finv = [0] * n
+        for i, w in enumerate(F):
+            Finv[w] = i
+        incall = ["p" if Finv[v] == Pi[v] else "b" for v in range(n)]
+        assert all(len({incall[v] for v in o}) == 1 for o in torbs)
+        # hence the reversed rounds-cycle calling is whole-Q-set
+        v, calling = root, []
+        while True:
+            calling.append("b" if mask[sorb[v]] else "p")
+            v = F[v]
+            if v == root:
+                break
+        v, per = root, {}
+        for c in reversed(calling):
+            per.setdefault(sorb[v], set()).add(c)
+            v = B[v] if c == "b" else P[v]
+        assert v == root
+        assert all(len(s) == 1 for s in per.values())
+
+
 def test_grandsire_extent_needs_singles():
     g = rings.METHODS["Grandsire Doubles"]
     found = rings.search_extents(g, "pbs")
