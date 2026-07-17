@@ -1626,6 +1626,103 @@ def test_falseness_detected():
     assert not rings.is_true(doubled)
 
 
+def test_no_palindromic_long_touches_grandsire_triples():
+    # The mirror alpha: h -> t.h.t^-1 (t = (35)(47)) reverses every
+    # bobs-only touch, so its fixed points would be PALINDROMIC
+    # callings: c == c[::-1] anchored at rounds. A touch of L leads is
+    # palindromic iff its head sequence satisfies h_i = alpha(h_{L-i}),
+    # i.e. beta(h) := alpha(F(h)) is an involution on the used heads
+    # (one fixed point for L odd, none for L even). Since F(h) is
+    # h.gp or h.gb and alpha(h.g) = alpha(h).g^-1, beta must pair h
+    # with mu_p(h) = alpha(h).gp^-1 or mu_b(h) = alpha(h).gb^-1 —
+    # a perfect matching in the mu-graph, whose shape this test pins
+    # down mechanically. Consequences (arithmetic below): NO
+    # palindromic touch has more than 343 leads. In particular no
+    # palindromic 4998 exists: the mirror acts freely on the 4998s of
+    # any alpha-invariant complement, so their number is even.
+    m = rings.find_method("Grandsire Triples")
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    gpi, gbi = rings.inverse(gp), rings.inverse(gb)
+    t = (1, 2, 5, 7, 3, 6, 4)
+    ti = rings.inverse(t)
+    heads = {rings.rounds(7)}
+    stack = [rings.rounds(7)]
+    while stack:
+        h = stack.pop()
+        for g in (gp, gb):
+            nh = rings.compose(h, g)
+            if nh not in heads:
+                heads.add(nh)
+                stack.append(nh)
+    H = sorted(heads)
+    idx = {h: i for i, h in enumerate(H)}
+    n = len(H)
+
+    def conj(h):
+        return rings.compose(rings.compose(t, h), ti)
+
+    A = [idx[conj(h)] for h in H]
+    MUP = [idx[rings.compose(conj(h), gpi)] for h in H]
+    MUB = [idx[rings.compose(conj(h), gbi)] for h in H]
+    # mu_p, mu_b are involutions (pairing is symmetric, same call both
+    # ways) and alpha(h.g) == alpha(h).g^-1
+    assert all(MUP[MUP[i]] == i and MUB[MUB[i]] == i for i in range(n))
+    assert A[idx[rings.compose(H[5], gp)]] == idx[
+        rings.compose(H[A[5]], gpi)
+    ]
+    # components of the mu-graph: 32 alternating 10-cycles (loop-free)
+    # and 8 paths of 5 with one mu_p-loop end and one mu_b-loop end
+    comp_id, comps = [-1] * n, []
+    for i in range(n):
+        if comp_id[i] >= 0:
+            continue
+        cset, st = [], [i]
+        while st:
+            j = st.pop()
+            if comp_id[j] >= 0:
+                continue
+            comp_id[j] = len(comps)
+            cset.append(j)
+            st.extend([MUP[j], MUB[j]])
+        comps.append(cset)
+    sizes = sorted(len(c) for c in comps)
+    assert sizes == [5] * 8 + [10] * 32
+    for c in comps:
+        loops_p = [i for i in c if MUP[i] == i]
+        loops_b = [i for i in c if MUB[i] == i]
+        if len(c) == 10:
+            assert not loops_p and not loops_b
+        else:
+            assert len(loops_p) == 1 and len(loops_b) == 1
+    # the 8 alpha-fixed heads all live in DISTINCT 10-components, and
+    # alpha sends every 5-component vertex into a 10-component
+    afix = [i for i in range(n) if A[i] == i]
+    assert len(afix) == 8
+    assert len({comp_id[i] for i in afix}) == 8
+    assert all(
+        len(comps[comp_id[A[i]]]) == 10
+        for c in comps if len(c) == 5 for i in c
+    )
+    # Arithmetic on those facts: beta fixed points need a mu-loop, so
+    # every 5-component the complement D misses (or hits evenly) holds
+    # at least one unmatched head; a palindromic touch allows at most
+    # one, so D hits >= 7 of the eight 5-components oddly. D is
+    # alpha-invariant, alpha moves every 5-component vertex to a
+    # 10-component and only 8 heads are alpha-fixed, so |D| >= 14; the
+    # sign of F = alpha.beta (an L-cycle) then forces the number of
+    # alpha-fixed heads in D to be 3 mod 4 for odd L, 2 mod 4 for even
+    # L, pushing |D| to >= 17 (odd L) or >= 18 (even L). Hence
+    # palindromic touches have at most 343 leads; 344..357 (the 4998!)
+    # are impossible, and the reversal pairs the 4998s two by two.
+    assert TOUCH_4998 != TOUCH_4998[::-1]
+    # the reversed 4998 is nonetheless a (different) true 4998, and
+    # short palindromic touches do exist: bbb and ppppp
+    for calling in ("bbb", "ppppp"):
+        assert calling == calling[::-1]
+        rows = rings.touch(m, calling)
+        assert rings.is_true(rows) and rows[0] == rows[-1]
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):
