@@ -1721,6 +1721,108 @@ def test_no_palindromic_long_touches_grandsire_triples():
         assert calling == calling[::-1]
         rows = rings.touch(m, calling)
         assert rings.is_true(rows) and rows[0] == rows[-1]
+    # For the extremal case L = 343 the candidate complements can be
+    # classified completely. |D| = 17 forces: exactly seven of the
+    # eight 5-components hit exactly once (the untouched one supplies
+    # the single beta-fixed point), three alpha-fixed heads removed,
+    # plus the alpha-images of the seven. A hit 5-path must keep a
+    # perfect matching with no NEW fixed point, so the removed vertex
+    # sits at even position 0, 2 or 4 (counted from the mup-loop end),
+    # and every 10-component must be hit evenly. Where the images land
+    # decides everything:
+    paths = {}
+    for ci, c in enumerate(comps):
+        if len(c) != 5:
+            continue
+        path = [i for i in c if MUP[i] == i]
+        for mu in (MUB, MUP, MUB, MUP):
+            path.append(mu[path[-1]])
+        paths[ci] = path
+    land = {
+        ci: {p: comp_id[A[path[p]]] for p in (0, 2, 4)}
+        for ci, path in paths.items()
+    }
+    afix_comps = {comp_id[i] for i in afix}
+    pos0 = [land[ci][0] for ci in paths]
+    pos2 = [land[ci][2] for ci in paths]
+    # pos-0 images land in eight DISTINCT 10-components, disjoint from
+    # every other hit component -- an unpaired odd hit, so position 0
+    # is never usable
+    assert len(set(pos0)) == 8
+    assert not set(pos0) & (set(pos2) | afix_comps)
+    # pos-2 images pair the 5-components into four pairs, each pair
+    # sharing one 10-component; pos-4 images biject onto the eight
+    # alpha-fixed-head components. Rounds is alpha-fixed, so the
+    # 5-component whose pos-4 image is rounds' own component can never
+    # take position 4 (it would delete rounds)
+    assert len(set(pos2)) == 4
+    assert all(pos2.count(x) == 2 for x in pos2)
+    assert {land[ci][4] for ci in paths} == afix_comps
+    r = idx[rings.rounds(7)]
+    assert A[r] == r
+    partner = {}
+    for shared in set(pos2):
+        a, b = [ci for ci in paths if land[ci][2] == shared]
+        partner[a], partner[b] = b, a
+    # so a valid complement = an untouched 5-component c0, its pos-2
+    # partner forced to position 4, one further whole pair on position
+    # 4 (fixing the three removed alpha-fixed heads), the rest on
+    # position 2 -- and rounds' component excluded from pos-4 duty:
+    # exactly 15 candidate complements survive
+    banned = [ci for ci in paths if land[ci][4] == comp_id[r]]
+    assert len(banned) == 1
+    count = 0
+    for c0 in paths:
+        if partner[c0] == banned[0]:
+            continue
+        for pr in {frozenset((a, b)) for a, b in partner.items()}:
+            if c0 in pr or banned[0] in pr:
+                continue
+            pos4set = {partner[c0]} | set(pr)
+            D = set()
+            for ci in paths:
+                if ci == c0:
+                    continue
+                p = 4 if ci in pos4set else 2
+                v = paths[ci][p]
+                D |= {v, A[v]}
+                if p == 4:
+                    D.add([i for i in afix if comp_id[i] == land[ci][4]][0])
+            assert len(D) == 17 and r not in D
+            assert {A[v] for v in D} == D
+            # every component of the mu-graph minus D retains a
+            # perfect matching (allowing only loop fixed points):
+            # hit components uniquely, untouched ones freely
+            nfree = 0
+            for ci2, c in enumerate(comps):
+                keep = [v for v in c if v not in D]
+                ways = _mu_matchings(keep, MUP, MUB)
+                assert ways >= 1
+                if len(keep) == len(c):
+                    assert ways == 2
+                    nfree += 1
+                else:
+                    assert ways == 1
+            assert nfree == 28
+            count += 1
+    assert count == 15
+    # (Exhausting the 2^28 matchings of a complement is beyond this
+    # suite; Gray-code C sweeps have eliminated several outright --
+    # no single-cycle F at all -- so the palindromic ceiling is
+    # likely below 343. See journal 2026-07-18.)
+
+
+def _mu_matchings(verts, MUP, MUB):
+    if not verts:
+        return 1
+    v, rest = verts[0], verts[1:]
+    total = 0
+    for u in (MUP[v], MUB[v]):
+        if u == v:
+            total += _mu_matchings(rest, MUP, MUB)
+        elif u in rest:
+            total += _mu_matchings([x for x in rest if x != u], MUP, MUB)
+    return total
 
 
 if __name__ == "__main__":
