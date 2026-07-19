@@ -1812,9 +1812,9 @@ def test_no_palindromic_long_touches_grandsire_triples():
     # single-cycle F. NO PALINDROMIC 343 EXISTS, even at the
     # head-cycle level. The palindromic ceiling is < 343.
     #
-    # Descending: L = 341, |D| = 19. A palindromic involution on an
-    # odd vertex set has exactly ONE fixed point (the middle lead),
-    # and a 5-path with an odd-position removal forces BOTH loop ends
+    # Descending. A palindromic involution has exactly ONE fixed
+    # point for odd L (the middle lead), NONE for even L, and a
+    # 5-path with an odd-position removal forces BOTH loop ends
     # fixed, so odd positions stay dead:
     for ci, path in paths.items():
         for p, want in ((0, [0]), (1, [2]), (2, [0]), (3, [2]),
@@ -1893,7 +1893,13 @@ def test_no_palindromic_long_touches_grandsire_triples():
             assert nfree == 27
             n341 += 1
     assert n341 == 125
-    # (the 125 x 2^27 sweep is running; see journal 2026-07-19)
+    # L = 342, |D| = 18, zero fixed points: ALL eight 5-paths hit
+    # once at even positions + two alpha-fixed heads, no extra pair.
+    # Parity leaves exactly 3 complements (all matching-valid, 27
+    # free bits). THEOREM (exhaustive sweep, 3 x 2^27, 2026-07-19):
+    # none admits a single-cycle F -- NO PALINDROMIC 342 EXISTS.
+    # The palindromic ceiling is <= 341; the 125 x 2^27 sweep for
+    # 341 is running (journal 2026-07-19).
 
 
 def _mu_matchings(verts, MUP, MUB):
