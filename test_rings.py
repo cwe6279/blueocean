@@ -2,6 +2,7 @@
 
 Set RINGS_SLOW=1 to include the ~1 minute exhaustive census tests."""
 
+import itertools
 import os
 
 import rings
@@ -1806,10 +1807,93 @@ def test_no_palindromic_long_touches_grandsire_triples():
             assert nfree == 28
             count += 1
     assert count == 15
-    # (Exhausting the 2^28 matchings of a complement is beyond this
-    # suite; Gray-code C sweeps have eliminated several outright --
-    # no single-cycle F at all -- so the palindromic ceiling is
-    # likely below 343. See journal 2026-07-18.)
+    # THEOREM (exhaustive Gray-code C sweep, 15 x 2^28 matchings,
+    # 2026-07-18/19): none of the fifteen complements admits a
+    # single-cycle F. NO PALINDROMIC 343 EXISTS, even at the
+    # head-cycle level. The palindromic ceiling is < 343.
+    #
+    # Descending: L = 341, |D| = 19. A palindromic involution on an
+    # odd vertex set has exactly ONE fixed point (the middle lead),
+    # and a 5-path with an odd-position removal forces BOTH loop ends
+    # fixed, so odd positions stay dead:
+    for ci, path in paths.items():
+        for p, want in ((0, [0]), (1, [2]), (2, [0]), (3, [2]),
+                        (4, [0])):
+            fx = _mu_match_fixes(
+                [v for v in comps[ci] if v != path[p]], MUP, MUB)
+            assert fx == want
+    # Hence a palindromic 341 needs: seven 5-paths hit once at even
+    # positions, one untouched (supplying the fixed point), three
+    # alpha-fixed heads (sign, as before: 3 mod 4), and ONE extra
+    # alpha-pair {v, alpha(v)} wholly inside 10-components:
+    # 7*2 + 3 + 2 = 19. Every 10-component must still be hit evenly.
+    # alpha is NOT a mu-graph automorphism: no moved vertex shares a
+    # component with its alpha-image, so the extra pair always
+    # toggles TWO distinct 10-components and must cancel the hit
+    # parity defect T exactly. The pair supply is rigid: 136
+    # component-pairs, one vertex pair each
+    cross = {}
+    for v in range(n):
+        av = A[v]
+        if av == v:
+            continue
+        assert comp_id[v] != comp_id[av]
+        if av < v or len(comps[comp_id[v]]) != 10 or \
+                len(comps[comp_id[av]]) != 10:
+            continue
+        cross.setdefault(
+            frozenset((comp_id[v], comp_id[av])), []).append((v, av))
+    assert len(cross) == 136
+    assert all(len(x) == 1 for x in cross.values())
+    # parity enumeration: T empty would need a same-component pair
+    # (none exist -- those 15 survivors are exactly the 343 configs
+    # reborn, all dead), T = {X, Y} must be a cross pair
+    heads3 = []
+    for hs in itertools.combinations(afix, 3):
+        if r not in hs:
+            heads3.append((hs, frozenset(comp_id[h] for h in hs)))
+    survivors = []
+    n_t0 = 0
+    for c0 in paths:
+        others = [ci for ci in paths if ci != c0]
+        for pos in itertools.product((0, 2, 4), repeat=7):
+            tog = frozenset()
+            for ci, p in zip(others, pos):
+                tog ^= {land[ci][p]}
+            for hs, hc in heads3:
+                T = tog ^ hc
+                if not T:
+                    n_t0 += 1
+                elif len(T) == 2 and T in cross:
+                    survivors.append((c0, others, pos, hs, T))
+    assert n_t0 == 15
+    assert len(survivors) == 545
+    # matching filter: exactly 125 candidate complements survive,
+    # each with 27 free matching bits and total fixed-point count 1
+    n341 = 0
+    for c0, others, pos, hs, T in survivors:
+        v1, v2 = cross[T][0]
+        D = {v1, v2} | set(hs)
+        for ci, p in zip(others, pos):
+            w = paths[ci][p]
+            D |= {w, A[w]}
+        if len(D) != 19 or r in D:
+            continue
+        assert {A[v] for v in D} == D
+        ok, nfix, nfree = True, 0, 0
+        for c in comps:
+            fx = _mu_match_fixes([v for v in c if v not in D], MUP, MUB)
+            if not fx or len(set(fx)) != 1:
+                ok = False
+                break
+            nfix += fx[0]
+            if len(fx) > 1:
+                nfree += 1
+        if ok and nfix == 1:
+            assert nfree == 27
+            n341 += 1
+    assert n341 == 125
+    # (the 125 x 2^27 sweep is running; see journal 2026-07-19)
 
 
 def _mu_matchings(verts, MUP, MUB):
@@ -1823,6 +1907,21 @@ def _mu_matchings(verts, MUP, MUB):
         elif u in rest:
             total += _mu_matchings([x for x in rest if x != u], MUP, MUB)
     return total
+
+
+def _mu_match_fixes(verts, MUP, MUB):
+    # fixed-point count of every matching (one list entry each)
+    if not verts:
+        return [0]
+    v, rest = verts[0], verts[1:]
+    out = []
+    for u in (MUP[v], MUB[v]):
+        if u == v:
+            out.extend(f + 1 for f in _mu_match_fixes(rest, MUP, MUB))
+        elif u in rest:
+            out.extend(_mu_match_fixes(
+                [x for x in rest if x != u], MUP, MUB))
+    return out
 
 
 if __name__ == "__main__":
