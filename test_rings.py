@@ -1901,7 +1901,6 @@ def test_no_palindromic_long_touches_grandsire_triples():
     # Parity leaves exactly 3 complements (all matching-valid, 27
     # free bits). THEOREM (exhaustive sweep, 3 x 2^27, 2026-07-19):
     # none admits a single-cycle F -- NO PALINDROMIC 342 EXISTS.
-    # The palindromic ceiling is <= 340.
     #
     # L = 340, |D| = 20, zero fixed points: all eight 5-paths hit
     # once at even positions + two heads + ONE extra cross pair
@@ -1944,6 +1943,9 @@ def test_no_palindromic_long_touches_grandsire_triples():
             assert nfree == 26
             n340 += 1
     assert n340 == 18
+    # THEOREM (exhaustive sweep, 18 x 2^26, 2026-07-20): none of the
+    # 18 admits a single-cycle F -- NO PALINDROMIC 340 EXISTS. The
+    # palindromic ceiling is <= 339.
     # L = 339, |D| = 21, one fixed point, heads = 3 mod 4 so 3 or 7
     # (only 7 usable): family A = 3 heads + 7 even hits + untouched
     # path + TWO cross pairs jointly cancelling T (|T| in {2, 4};
@@ -1955,8 +1957,8 @@ def test_no_palindromic_long_touches_grandsire_triples():
     # L = 338, |D| = 22, no fixed point, heads 2 or 6: the same
     # two-family split (2 heads + 2 cross pairs / 6 heads + none)
     # gives 1977 + 1 parity survivors and 132 + 1 = 133 complements
-    # (121 with 25 free bits, 12 with 26). Sweeps for 340
-    # (18 x 2^26), 339 (926 x 2^26) and 338 queued; see journal.
+    # (121 with 25 free bits, 12 with 26). The 339 sweep
+    # (926 x 2^26) is running, 338 queued behind it; see journal.
 
 
 def _mu_matchings(verts, MUP, MUB):
