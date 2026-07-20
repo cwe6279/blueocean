@@ -1893,13 +1893,66 @@ def test_no_palindromic_long_touches_grandsire_triples():
             assert nfree == 27
             n341 += 1
     assert n341 == 125
+    # THEOREM (exhaustive sweep, 125 x 2^27, 2026-07-19/20): none of
+    # the 125 admits a single-cycle F -- NO PALINDROMIC 341 EXISTS.
+    #
     # L = 342, |D| = 18, zero fixed points: ALL eight 5-paths hit
     # once at even positions + two alpha-fixed heads, no extra pair.
     # Parity leaves exactly 3 complements (all matching-valid, 27
     # free bits). THEOREM (exhaustive sweep, 3 x 2^27, 2026-07-19):
     # none admits a single-cycle F -- NO PALINDROMIC 342 EXISTS.
-    # The palindromic ceiling is <= 341; the 125 x 2^27 sweep for
-    # 341 is running (journal 2026-07-19).
+    # The palindromic ceiling is <= 340.
+    #
+    # L = 340, |D| = 20, zero fixed points: all eight 5-paths hit
+    # once at even positions + two heads + ONE extra cross pair
+    # cancelling the parity defect (T = 0 would need a same-component
+    # pair; none exist):
+    heads2 = []
+    for hs in itertools.combinations(afix, 2):
+        if r not in hs:
+            heads2.append((hs, frozenset(comp_id[h] for h in hs)))
+    surv340 = []
+    for pos in itertools.product((0, 2, 4), repeat=8):
+        tog = frozenset()
+        for ci, p in zip(paths, pos):
+            tog ^= {land[ci][p]}
+        for hs, hc in heads2:
+            T = tog ^ hc
+            if len(T) == 2 and T in cross:
+                surv340.append((pos, hs, T))
+    assert len(surv340) == 102
+    n340 = 0
+    for pos, hs, T in surv340:
+        v1, v2 = cross[T][0]
+        D = {v1, v2} | set(hs)
+        for ci, p in zip(paths, pos):
+            w = paths[ci][p]
+            D |= {w, A[w]}
+        if len(D) != 20 or r in D:
+            continue
+        assert {A[v] for v in D} == D
+        ok, nfix, nfree = True, 0, 0
+        for c in comps:
+            fx = _mu_match_fixes([v for v in c if v not in D], MUP, MUB)
+            if not fx or len(set(fx)) != 1:
+                ok = False
+                break
+            nfix += fx[0]
+            if len(fx) > 1:
+                nfree += 1
+        if ok and nfix == 0:
+            assert nfree == 26
+            n340 += 1
+    assert n340 == 18
+    # L = 339, |D| = 21, one fixed point, heads = 3 mod 4 so 3 or 7
+    # (only 7 usable): family A = 3 heads + 7 even hits + untouched
+    # path + TWO cross pairs jointly cancelling T (|T| in {2, 4};
+    # T = 0 forces equal comp-pairs, i.e. the same vertex pair --
+    # dead). Family B = all 7 usable heads, no extra pair, T = 0.
+    # Enumeration (2026-07-20, /tmp/pal339.py): 10755 A-survivors +
+    # exactly ONE B-survivor; matching filter leaves 925 + 1 = 926
+    # complements (876 with 26 free bits, 50 with 27). Sweeps for
+    # 340 (18 x 2^26) and 339 (926 x 2^26) running; see journal.
 
 
 def _mu_matchings(verts, MUP, MUB):
