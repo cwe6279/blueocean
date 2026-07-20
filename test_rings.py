@@ -1951,8 +1951,12 @@ def test_no_palindromic_long_touches_grandsire_triples():
     # dead). Family B = all 7 usable heads, no extra pair, T = 0.
     # Enumeration (2026-07-20, /tmp/pal339.py): 10755 A-survivors +
     # exactly ONE B-survivor; matching filter leaves 925 + 1 = 926
-    # complements (876 with 26 free bits, 50 with 27). Sweeps for
-    # 340 (18 x 2^26) and 339 (926 x 2^26) running; see journal.
+    # complements (876 with 26 free bits, 50 with 27).
+    # L = 338, |D| = 22, no fixed point, heads 2 or 6: the same
+    # two-family split (2 heads + 2 cross pairs / 6 heads + none)
+    # gives 1977 + 1 parity survivors and 132 + 1 = 133 complements
+    # (121 with 25 free bits, 12 with 26). Sweeps for 340
+    # (18 x 2^26), 339 (926 x 2^26) and 338 queued; see journal.
 
 
 def _mu_matchings(verts, MUP, MUB):
