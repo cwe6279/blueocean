@@ -27,6 +27,29 @@ TOUCH_4984_A = (
     "bbppbppppbppppbpppbppbppppbbpbbppbbpbppppbppppbbpbbppppbbpp"
     "bb"
 )
+# The LONGEST palindromic bobs-only touches of Grandsire Triples:
+# 339 leads (4746 changes) and 338 leads (4732), found 2026-07-21 by
+# the exhaustive mu-matching sweeps of test_no_palindromic_long_
+# touches_grandsire_triples. Each was the unique "family B"
+# complement of its length (all usable alpha-fixed heads, no extra
+# cross pairs). No palindromic touch of 340..357 leads exists, so
+# 4746 is the exact palindromic ceiling.
+PAL_4746 = (
+    "pbppppbbpbbpppbbppppbbppppbpbpbppbpbbppppbbppppbbppppbbppbbp"
+    "ppbbpppbbppbpppbbpbppppbbpbbppppbbpbppbbpppbpbbppppbbppbbppb"
+    "pbppbppbbpbpbppppbbppppbbpppbbpbppbbpbpbbppbbpbppbppbpbbppbb"
+    "pbpbbppbpbbpppbbppppbbppppbpbpbbppbppbpbppbbppbbppppbbpbpppb"
+    "bppbpbbppppbbpbbppppbpbbpppbppbbpppbbpppbbppbbppppbbppppbbpp"
+    "ppbbpbppbpbpbppppbbppppbbpppbbpbbppppbp"
+)
+PAL_4732 = (
+    "ppbpppbppppbbppbbpppbppppbbppbbppbppppbbpppbbppbbppppbbppbpb"
+    "bpbpppbbpppbppbpbbppppbbpbppbpbpbppppbbppppbbpppbpppbpbbppbb"
+    "pbpbbppppbpbbppbppbbppppbbppbppbppppbbpbbppppbbppppbbppppbbp"
+    "bbppppbppbppbbppppbbppbppbbpbppppbbpbpbbppbbpbpppbpppbbppppb"
+    "bppppbpbpbppbpbbppppbbpbppbpppbbpppbpbbpbppbbppppbbppbbpppbb"
+    "ppppbppbbppbbppppbpppbbppbbppppbpppbpp"
+)
 # Whole-Q-set callings, one 72-bit toggle vector per Q-set (in
 # sorted-head sigma-orbit order): bit q set means Q-set q is bobbed.
 # The cycle of the resulting next-head permutation through rounds has
@@ -1957,8 +1980,43 @@ def test_no_palindromic_long_touches_grandsire_triples():
     # L = 338, |D| = 22, no fixed point, heads 2 or 6: the same
     # two-family split (2 heads + 2 cross pairs / 6 heads + none)
     # gives 1977 + 1 parity survivors and 132 + 1 = 133 complements
-    # (121 with 25 free bits, 12 with 26). The 339 sweep
-    # (926 x 2^26) is running, 338 queued behind it; see journal.
+    # (121 with 25 free bits, 12 with 26).
+    # SWEEP VERDICT (2026-07-21): the 339 sweep (926 x 2^26) and the
+    # 338 sweep (133 x 2^25) each produced exactly one FOUND -- and
+    # in BOTH cases it was the unique family-B complement (all
+    # usable heads, no extra pairs), the last index. Both verified
+    # TRUE (see test_palindromic_ceiling_attained_grandsire_triples).
+    # With no 340/341/342/343 and nothing above 343, the palindromic
+    # ceiling of Grandsire Triples is EXACTLY 339 leads.
+
+
+def test_palindromic_ceiling_attained_grandsire_triples():
+    # The extremal witnesses: true palindromic bobs-only touches of
+    # 339 leads (the exact ceiling -- see the sweep theorems in
+    # test_no_palindromic_long_touches_grandsire_triples) and 338.
+    # Both came from the unique family-B complement of their length:
+    # all usable alpha-fixed heads removed, no extra cross pairs.
+    m = rings.find_method("Grandsire Triples")
+    t = (1, 2, 5, 7, 3, 6, 4)
+    ti = rings.inverse(t)
+    for calling, nleads, changes in (
+        (PAL_4746, 339, 4746),
+        (PAL_4732, 338, 4732),
+    ):
+        assert len(calling) == nleads
+        assert calling == calling[::-1]
+        rows = rings.touch(m, calling)
+        assert rings.is_true(rows)
+        assert rows[-1] == rings.rounds(7)
+        assert len(rows) - 1 == changes
+        # palindromic in the structural sense too: the head sequence
+        # satisfies h_i = alpha(h_{L-i}) with alpha = conjugation by
+        # t = (35)(47), the row-reversal mirror
+        hs = [rows[i * 14] for i in range(nleads)]
+        assert all(
+            hs[i] == rings.compose(rings.compose(t, hs[-i % nleads]), ti)
+            for i in range(nleads)
+        )
 
 
 def _mu_matchings(verts, MUP, MUB):
