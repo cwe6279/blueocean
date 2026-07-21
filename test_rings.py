@@ -1988,6 +1988,12 @@ def test_no_palindromic_long_touches_grandsire_triples():
     # TRUE (see test_palindromic_ceiling_attained_grandsire_triples).
     # With no 340/341/342/343 and nothing above 343, the palindromic
     # ceiling of Grandsire Triples is EXACTLY 339 leads.
+    # FULL CENSUS of the two B-configs (all free-bit settings,
+    # 2^26 / 2^25, 2026-07-21): exactly 135 single-cycle settings at
+    # L = 339 and 226 at L = 338 -- every one a TRUE touch (no
+    # falseness ever appeared), every calling distinct. So Grandsire
+    # Triples has exactly 135 palindromic 4746s and 226 palindromic
+    # 4732s, all sharing their length's unique family-B complement.
 
 
 def test_palindromic_ceiling_attained_grandsire_triples():
@@ -2017,6 +2023,51 @@ def test_palindromic_ceiling_attained_grandsire_triples():
             hs[i] == rings.compose(rings.compose(t, hs[-i % nleads]), ti)
             for i in range(nleads)
         )
+
+
+def test_grandsire_triples_falseness_is_convergence():
+    # Why every single-cycle F in the palindrome sweeps verified TRUE
+    # (361 out of 361, no exceptions): the ONLY row shared between
+    # bobs-only Grandsire Triples leads of distinct heads is the
+    # lead-END row (index 13), and h1's b-lead shares it with h2's
+    # p-lead exactly when both converge on the SAME next head
+    # (h1.gb == h2.gp). A touch visits each head once, so no head has
+    # two predecessors: distinct heads => true, automatically. Truth
+    # of a bobs-only round block is purely combinatorial.
+    m = rings.find_method("Grandsire Triples")
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    heads = {rings.rounds(7)}
+    stack = [rings.rounds(7)]
+    while stack:
+        h = stack.pop()
+        for g in (gp, gb):
+            nh = rings.compose(h, g)
+            if nh not in heads:
+                heads.add(nh)
+                stack.append(nh)
+    assert len(heads) == 360
+    occ = {}
+    for h in heads:
+        for call in "pb":
+            rows = rings.touch(m, call)
+            assert len(rows) == 15
+            for i, r in enumerate(rows[:-1]):
+                occ.setdefault(rings.compose(h, r), []).append((h, call, i))
+    conv = rings.compose(gb, rings.inverse(gp))
+    shared = 0
+    for r, slots in occ.items():
+        hs = {h for h, c, i in slots}
+        if len(hs) == 1:
+            continue
+        shared += 1
+        # exactly two heads, both at index 13, one b one p, converging
+        assert len(slots) == 2 and {c for _, c, _ in slots} == {"p", "b"}
+        assert all(i == 13 for _, _, i in slots)
+        (h1, c1, _), (h2, c2, _) = slots
+        hb, hp = (h1, h2) if c1 == "b" else (h2, h1)
+        assert rings.compose(hb, gb) == rings.compose(hp, gp)
+        assert hp == rings.compose(hb, conv)
+    assert shared == 360
 
 
 def _mu_matchings(verts, MUP, MUB):
