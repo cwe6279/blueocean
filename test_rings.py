@@ -42,6 +42,24 @@ PAL_4746 = (
     "bppbpbbppppbbpbbppppbpbbpppbppbbpppbbpppbbppbbppppbbppppbbpp"
     "ppbbpbppbpbpbppppbbppppbbpppbbpbbppppbp"
 )
+# Exact counts of palindromic bobs-only touches of Grandsire Triples
+# by lead-count L, from the mirror-DFS of test_palindromic_touch_
+# census_small_grandsire_triples run to depth 33 in C (2026-07-22,
+# 58.6M nodes): exact for every even L <= 66 and odd L <= 67, and no
+# other L <= 67 occurs. The two courses count as (trivially
+# palindromic) touches. Top end for comparison: 226 at L = 338, 135
+# at L = 339 (the ceiling), zero beyond.
+PAL_SPECTRUM = {
+    3: 1, 5: 1, 12: 3, 15: 1, 17: 1, 18: 1, 19: 3, 20: 4, 21: 7,
+    22: 7, 23: 9, 24: 14, 25: 28, 26: 16, 27: 41, 28: 55, 29: 55,
+    30: 56, 31: 90, 32: 72, 33: 164, 34: 126, 35: 321, 36: 289,
+    37: 504, 38: 557, 39: 731, 40: 660, 41: 1359, 42: 1252,
+    43: 2233, 44: 2081, 45: 3488, 46: 3685, 47: 5632, 48: 5266,
+    49: 9680, 50: 9059, 51: 16406, 52: 15207, 53: 25912, 54: 25714,
+    55: 41675, 56: 39664, 57: 68081, 58: 63958, 59: 113361,
+    60: 105058, 61: 180089, 62: 172314, 63: 286932, 64: 275390,
+    65: 461898, 66: 434652, 67: 745388,
+}
 PAL_4732 = (
     "ppbpppbppppbbppbbpppbppppbbppbbppbppppbbpppbbppbbppppbbppbpb"
     "bpbpppbbpppbppbpbbppppbbpbppbpbpbppppbbppppbbpppbpppbpbbppbb"
@@ -1994,6 +2012,15 @@ def test_no_palindromic_long_touches_grandsire_triples():
     # falseness ever appeared), every calling distinct. So Grandsire
     # Triples has exactly 135 palindromic 4746s and 226 palindromic
     # 4732s, all sharing their length's unique family-B complement.
+    # L = 337, |D| = 23, one fixed point, heads 3 or 7: family A =
+    # 3 heads + 7 even hits + untouched path + THREE distinct cross
+    # pairs jointly cancelling T (|T| in {0, 2, 4, 6}; T = 0 is now
+    # live -- a triangle of three distinct comp-pairs XORing to
+    # nothing). Family B = 7 heads + ONE cross pair (|T| = 2).
+    # Enumeration (2026-07-21, /tmp/pal337.py): 159545 A-survivors +
+    # 7 B-survivors; matching filter leaves 6920 + 3 = 6923
+    # complements (6183 with 25 free bits, 715 with 26, 25 with 27).
+    # Census sweep verdict pending (in progress 2026-07-22).
 
 
 def test_palindromic_ceiling_attained_grandsire_triples():
@@ -2068,6 +2095,81 @@ def test_grandsire_triples_falseness_is_convergence():
         assert rings.compose(hb, gb) == rings.compose(hp, gp)
         assert hp == rings.compose(hb, conv)
     assert shared == 360
+
+
+def test_palindromic_touch_census_small_grandsire_triples():
+    # The bottom of the palindromic spectrum, by mirror-DFS. A
+    # palindromic calling is determined by its first half: with
+    # alpha(h) = t.h.t (t = (35)(47)) the lead transitions satisfy
+    # t.g_c.t == g_c^{-1}, so x --c--> y implies alpha(y) --c-->
+    # alpha(x), and the heads of a palindromic touch obey
+    # h_i = alpha(h_{L-i}). DFS from rounds over first-half calls,
+    # forbidding V = visited U alpha(visited) (any collision h_i =
+    # alpha(h_j) repeats a head in the full touch). An alpha-fixed
+    # head at depth k closes an even palindrome L = 2k, and the
+    # branch dies (an INTERIOR alpha-fixed head would collide with
+    # its own mirror); a step h --c--> alpha(h) at depth k closes an
+    # odd palindrome L = 2k + 1 (the fixed center call). Distinct
+    # heads imply truth (falseness-is-convergence), so these counts
+    # are exact counts of true palindromic touches per lead-count:
+    #   L      3  5  12  15  17  18  19  20  21  22  23  24  25
+    #   count  1  1   3   1   1   1   3   4   7   7   9  14  28
+    #   L     26  27  28  29  30  31
+    #   count 16  41  55  55  56  90
+    # and NO other L <= 31 occurs: the two courses (b^3, p^5), then
+    # a gap to the three palindromic 12s -- TWO rotations of
+    # (ppbb)^3 (pbbp and bppb phase) plus ONE of (ppb)^4
+    # (pbppbppbppbp); the (pppb)^3 class has none -- and nothing at
+    # 13, 14 or 16. Counts include the courses; compare the top
+    # end: 226 at L = 338, 135 at L = 339, zero beyond.
+    m = rings.find_method("Grandsire Triples")
+    gp, gb = rings.head_perm(m, "p"), rings.head_perm(m, "b")
+    t = (1, 2, 5, 7, 3, 6, 4)
+    for g in (gp, gb):
+        assert rings.compose(rings.compose(t, g), t) == rings.inverse(g)
+
+    def alpha(h):
+        return rings.compose(rings.compose(t, h), t)
+
+    K = 15
+    counts = {}
+    witnesses = []
+
+    def dfs(h, k, calls, V):
+        if k >= 1:
+            a = alpha(h)
+            if a == h:
+                counts[2 * k] = counts.get(2 * k, 0) + 1
+                witnesses.append(calls + calls[::-1])
+                return
+            for c, g in (("p", gp), ("b", gb)):
+                if rings.compose(h, g) == a:
+                    counts[2 * k + 1] = counts.get(2 * k + 1, 0) + 1
+                    witnesses.append(calls + c + calls[::-1])
+        if k == K:
+            return
+        for c, g in (("p", gp), ("b", gb)):
+            nh = rings.compose(h, g)
+            if nh not in V:
+                dfs(nh, k + 1, calls + c, V | {nh, alpha(nh)})
+
+    r = rings.rounds(7)
+    dfs(r, 0, "", {r})
+    assert counts == {L: n for L, n in PAL_SPECTRUM.items()
+                      if L <= 2 * K + 1}
+    assert sum(counts.values()) == len(witnesses)
+    # every witness is a genuinely true, closed, palindromic touch
+    assert {w for w in witnesses if len(w) <= 15} == {
+        "bbb", "ppppp", "bppbbppbbppb", "pbbppbbppbbp",
+        "pbppbppbppbp", "bpbbpbbpbbpbbpb",
+    }
+    for w in witnesses:
+        if len(w) > 20:
+            continue
+        assert w == w[::-1]
+        rows = rings.touch(m, w)
+        assert rings.is_true(rows)
+        assert rows[-1] == r and len(rows) == 14 * len(w) + 1
 
 
 def _mu_matchings(verts, MUP, MUB):
