@@ -44,9 +44,9 @@ PAL_4746 = (
 )
 # Exact counts of palindromic bobs-only touches of Grandsire Triples
 # by lead-count L, from the mirror-DFS of test_palindromic_touch_
-# census_small_grandsire_triples run to depth 33 in C (2026-07-22,
-# 58.6M nodes): exact for every even L <= 66 and odd L <= 67, and no
-# other L <= 67 occurs. The two courses count as (trivially
+# census_small_grandsire_triples run to depth 36 in C (2026-07-23,
+# 235.4M nodes): exact for every even L <= 72 and odd L <= 73, and no
+# other L <= 73 occurs. The two courses count as (trivially
 # palindromic) touches. Top end for comparison: 226 at L = 338, 135
 # at L = 339 (the ceiling), zero beyond.
 PAL_SPECTRUM = {
@@ -58,7 +58,8 @@ PAL_SPECTRUM = {
     49: 9680, 50: 9059, 51: 16406, 52: 15207, 53: 25912, 54: 25714,
     55: 41675, 56: 39664, 57: 68081, 58: 63958, 59: 113361,
     60: 105058, 61: 180089, 62: 172314, 63: 286932, 64: 275390,
-    65: 461898, 66: 434652, 67: 745388,
+    65: 461898, 66: 434652, 67: 745388, 68: 697597, 69: 1187389,
+    70: 1114398, 71: 1873549, 72: 1788940, 73: 2964173,
 }
 PAL_4732 = (
     "ppbpppbppppbbppbbpppbppppbbppbbppbppppbbpppbbppbbppppbbppbpb"
