@@ -64,98 +64,100 @@ PAL_SPECTRUM = {
     70: 1114398, 71: 1873549, 72: 1788940, 73: 2964173,
 }
 # One palindromic bobs-only touch of Grandsire Triples for EVERY lead
-# count L in [74, 304] plus L = 315, found by randomized mirror-DFS
-# with restarts (/tmp/palfind.c, 2026-07-23/24; hardest was L = 304
-# at 1.18G nodes; 305..314 and 316..336 resisted 1.2G x 12 seeds
-# each). Together with PAL_SPECTRUM (exact, nonzero for L = 17..73)
-# and the 337/338/339 witnesses above, palindromic touches exist for
-# every L in [17, 304] and at 315, 337, 338, 339; the open ground is
-# [305, 314] and [316, 336].
+# count L in [74, 304] plus L = 315 and 335, found by randomized
+# mirror-DFS with restarts (/tmp/palfind.c, 2026-07-23/24; hardest
+# was L = 304 at 1.18G nodes; 305..314 and 316..336 resisted 1.2G x
+# 12 seeds each) and, for 335, by the family-B sweep (/tmp/pal335.py,
+# 2026-07-24: 15 family-B complements, 1000+ touches). Together with
+# PAL_SPECTRUM (exact, nonzero for L = 17..73) and the 337/338/339
+# witnesses above, palindromic touches exist for every L in [17, 304]
+# and at 315, 335, 337, 338, 339; the open ground is [305, 314],
+# [316, 334] and 336.
 # Encoding: zlib+base64 of "L:half" lines; even L reconstructs as
 # s + reversed(s), odd L (half includes the fixed center call) as
 # s + reversed(s[:-1]).
 PAL_MID_WITNESSES_BLOB = (
-    "eNp9XEmC4kgMvPMabAO29Ry9QP8/dUIZrFjch+mproZctYRCUq6PyKqsHH++/1/vn/5+"
-    "zuO/z19u6zPy79+OX35/zmwfHX/e1lf8vvb5TPvG3zzH32/renyShjiHP34xpt+iDfFd"
-    "bJ6/yO+Et3U/5y/cGAzwHna7R9bvw+ewx7Tfv/19dorfGn9jtEP6jfz58BznjO2c8jvd"
-    "7yzeH14i21nrgbXljE8/om/rvK2+j+/ib9szql9T0d20RX8Gf0XbS/a9tnP+jnTb1viO"
-    "mefY7VR+Z32sfYvinTYhqfN8Pj/dtn6XbTn9IM9djAXt9+hS8ftYnss8f/Fe0T5uNdvs"
-    "2U6oeK7PHvY5mgzC6Z9nDKe0L9EPr623XUs/6zHJI/SO2+X2zR1Xtz8DL6uLBorRd2+3"
-    "/RV4xfhTF5bvAm77Gl2Mu3z33VWXt9u+hRxyk6aEwz62dtv3KN4n6Ma5xnPS23S/Bypp"
-    "PzxzX3+XNN2nODWZJjh/zIQJ39PNccrWKSxtaSQqecy3BFtI0Pgq1de//T0C5aWfGv1w"
-    "WoP3F5/RrFw7hS6yCdb/z4hM91f0zcH5ZZEKtzMc3/zZeNkpWC/Q62O5W3RVTfleE+rq"
-    "tmd89WM3CvaUCZuvLq/nKd+m6fQJmV0nZItJQjm+OwXeXzWThSYoq//68+U53IGi/6gC"
-    "7Tk+OL68hN0s6WSzhU3RpukRST6hidepDtWt/fHn+PYTFw5f72oPdjN/B/4WLp0+mydj"
-    "J98s/jStkWDfuj2la2vG8PjY+P7HNLHTarsAS9UscB13vkdTVnBS1f0BWbhzAfM90Bkk"
-    "XC7qWhegw1dM8xTkbbuj6cariUzb6BhhjkTfQnsuWFOzY99bmJdAPFjGRHWjyrZrDPEI"
-    "hF1pTed5HkUudAzx7NgTjwS9FXqB8xNjjFeA0leCNWZ/VPjJYx1r4MaLzB2bgma+jj2N"
-    "QbYATy/IoTr4tBONQfYokkaRRERwbT0/+VjugWanEO3RohRf/o0yBWgRKCagA0DqiMfG"
-    "MHMQqClxPpm66exLHsMsQTYdsBFiJxXtLxyflkewE0MDSdaHJOsnM8sTfQfpSQ++kmBR"
-    "n34M9AqYqZsgXBEgDZbHMdAaEEPBQhBsFIcSXTDGSFuwyrM1bCArC8OhU/nGSHt0XEZY"
-    "P9HYE3CrDhZv0+MeHYZ3KUnEzylgAOR4DDWFBEoY9LXQAnEiyuZ7WXOwK6GgDReELrlb"
-    "mDHWoqqCi09jj3iP300+ApWBjySNqiQDoeMeH88oVPmOfNDDdakykd37zA4Ikeg4IejC"
-    "y+wgEEVmjLZGKYwrcBdEfXCwfy50DLcFxWwCTEjskIwBnzeG2yNVIBh5p/jabrRPIblN"
-    "z3sUBezkpUiSi1Bx9fBnjDeFhJGI4hE4pwYO/frGgHOwZENg1GcpJ0NgVd47blgFQ05g"
-    "qfBndDTZGYUx4iME52axwaYpk1HdOd0Y8RnKShVTc2lujgL4/EGBZ/cLpQeTliyAgAFx"
-    "3BhyDYkPQFAwlKaQogpB5XE7W2QJyCvkD+liilaGnn+M2VAQE5fodNMG0WiFDj/7ugeb"
-    "KjwrJhZTAhCmI8agU4gb8xwROtos52x+S52jG0Jy3Re2rMBC0gffp/o6Yk78VrIrRrVX"
-    "CUUmaAwLgMryNVUkyQl4CpTtKwOvZ/TjLBJTnSxBBNNTQGPcVzR1oghXopQUkrdK7vTj"
-    "hV6HbqE2ckCeqKfIWSsG/QjDwasUAxMCqVUMI9n9FzJorz1M5MzeluKVIkKNg9bPWaz3"
-    "MKwmJwQUJwMXl2w832tepxCOQXSpXJRgiYFOJK1zIAQh6A1nYCAZkb3nvY6hl0jDSyKp"
-    "RCQWpB1QEdo2xtiPQG+bVRa2o2IXsQOAu76ed30GgSVm44yWU2DLxNnPHJ2JpxS3ymE+"
-    "cWGEG4RoGYOvUZx34PgQJkbqIZFd5Sh93cLQPyVgugg/MOejSOJzo3tQPEPhG6i0QFyg"
-    "o4u90m3a7poQKIzq2DonEc6Jut+GGMNPIfE43iSlORJtWsLVJ5nlMf6Pv1cSOlWWM4uc"
-    "RnJSo7vYMf4SELAWJw8JuIqzQTxcBHvHBI+weUXN6TCtxkku4na/3PL2zSyxf0iBfpwy"
-    "o4tKyWT92bPtFeUClkxhHYstTKdDUq38EdO9M5XpkCJQ20DoE+fJsToZjDHFV4lLMl1l"
-    "AE0KK0wENaL+v13sQaQE0lHoY9PlMCmYLpLf27Tfo8CdUMqdFLskdjX8NxrjMccUklzM"
-    "MlFwpjDQmMTnDMHvpzHJzIQa8pXFJ96dhIVsxXc7JlnCAAcB5uSsSMKZNyF2a8zyCLYD"
-    "GBgxeaopGCAlJI/3N8szGBoTfwouswNGFz6WQYCfaV6hDEpKcFwOoSCeoiim68uYZo0U"
-    "Qoh8mcTqTEgl56IYUY55vnDaZPdLk7TJPxJiAzN8gpExzx7pKCtKnDOxa3nIUuj5yy/P"
-    "918+SvG2eD65KAotkMUDXDLfp6giJjjJw11l4Mm4ko9G4DlmmiGnm4qWIBrMYsVi+oac"
-    "wC/zPN+X6OAPMZEiBs1MElGn+djz+B7BGW2uF2EvjfbPRE5IIH11ab4/Qz/Ke8tC1S3i"
-    "pNjyIO1/bgvMg4iZWoLMulBctJIAjD6ofr6vwTAF4xZjrSnTzDRfcjTzBYLzfQunMxSt"
-    "UQ2a42hcYh9LqMZke1DewIgCw50sBm5cCsNVIMfWpnsoLcAJLAQQWZoPK1d/xe5mzDZF"
-    "SokCsWJGG9KSlIop8ELHdLOpt9HU1RWPxnlgomxIjsZ0S1ivl2Xq3jIxlk9SOsYTyEP8"
-    "zde4a0nAAkrKkjRMJtFI7O3Iub+P8xlUFOpSNjKmCXGVo2Iv/3d/rxCrhzl1A3oYP5eW"
-    "X1SZpNJnh2ukBtq8ZsJVypJehZTELH9m/HLmSCJyUv8qSUWRYKXF7c0Ljxn3oLSyq1cx"
-    "Bi2zbDBtbVu7o9v8qZPR6E+ZFymQYt3ANCevtLlYqKxJChOSXUOVCxi4no9dCiLXMecc"
-    "CLiFWCu3MdL9zo1kSp4FMMiYcwksL1PUxdz+f1wxA+oUIP836S+frPwWnRYKroADqR4o"
-    "y4F+bvQZRZUeTD0xc0lBD0dpRKuaaukx6ysKy/ecA8nUivnkmhKkhbmYsGeK53kNpKsM"
-    "IifaRPPmwqpxspnM75h2C+YgkdrBEuxyllGtpCRsMPAf0+5RSPIqXAU2jTyYJeS4Ei2p"
-    "TGFs96yNyjLYztwxpaxMoZgF5kBkjnmnuKA/yxWccZGVTQ8oywqR5Z+xWOa4SsbaWpdi"
-    "Z1eOCUkXRPZ7HBNjjSHSxelgQXosacpQiauBMHvM/AhFxSUlNKX4ECPY0i4YR/iflYTz"
-    "gnUylu9hXsHXDbuKcpRFLOudl1YIiey1VFCmVmZc7bqKuZji7O6Yeg22LYY/r1ReUIvp"
-    "KWBzlQLZY91liywpAs4LZS4GksC2SUMMVyiAJoy59yh1v0mZquTmhTT/YoKi5Lqnjhhv"
-    "8+MexfT3VeUfMxKmH8qxzako49DtxxTEIaY69zRzCLWpSJTvjhV5zD5f5PCNh5WiVxuR"
-    "Y3RXpuDijNUfSxDQ0z4L7ZpwssBpClMpwGUOY/qH1rEwxC3XYXLRLiLuTEpkmk6N6Z+h"
-    "1VolqD0Lo9oLSkgvWIBgt0Pv7b8uEKFG0GnjB+ow89UapeVoh715rCGCWsLLaN1d2hY1"
-    "5ncNeQR+8L2ALThaYN3WxJgpttG8jGveYC70vQCOJTV5gNVVArLlXJO6e7qjIvvzXsHz"
-    "HtLmoMkiW2XuHIDAVcoOFJd3jRVMkRphpVTVqjNhq1dEiwp9KkzKYYKfc6Rx51o1I45Z"
-    "y9Sk7k/tkdQBvJewRJYhoDiwtb0qmVwxoykoMSPUG/S+iUekkq5EYro6A2ZauI5aejn0"
-    "dz9peAaX7nJ/YJqWLIH4irhshlxM7scuPH9F1Vw9Ig3QLrOhPC9FC46aImcyFtGtI3Ix"
-    "pdlpUxsovQTEUlW6UQCnjVVsYffK+yz2IldQSqJFbAtxHx6r2CMJ8xDVLUW6WLcuFphb"
-    "IFNyfGC0/pT0W/eaJtVnKhyl31EMlpLhxnOQso5lTCHlXamIC7aRvgmYG6lKYjcN6r7p"
-    "7PmvtlYMfhqWElUQv8WdololXJe49m8dS+RVGg64qjQtP67w0XAfAj4k5fxeyCMAZzD4"
-    "Uul0HUHsvjF61yoLiTfHQp5BjbIaSYmnkiY/bViglHNe0ke//POr96dI8S014HBKsRzL"
-    "qjrnGWa8sLGSNbAyoEyvs6l/4GaLMp2exPmafG2zwmMpWxhdlwRBCYNP7CH3NWVJPZXE"
-    "sHDaYyl7wCMeedEqaUsUtObVaLxBLLaO4zav9yhjBCjnUybtIl2LWqyTLh1sEp/HuawT"
-    "leroCwwXljSvLpVpp9Re3aS60UOJ1m+hJjaGcGOd1N/lVYkZ0sQKPKmno9mrsZglpPzD"
-    "1l2meywm3fs1UqXqngpx3m2s5hGu+xtL6evqAQQbUpUFVSYnSk2x79U8sSBY++rNg0O2"
-    "/4JjSq4aYIdHlaeH3LyiuNBAWtpMxF5aJ22atoUVLtvW8mvDmtfVvGrC1GFVmgJJUhlt"
-    "1uco2LS6U4g21rNFmXMhTjzVVJmuBYkGpQrHcdldX8Z69uDKzivNtIIqzEeZzEya11Yk"
-    "F3QsaPvxoimMJyfxTQ1MGXujjZha9ad90F8fvk3BSXMtLqRJJL/K89v2CijTNk8/fEPF"
-    "rbfkc7FG2bowKhygVqs0nTYMD9MBpm+stC1BVovaajRvw28JaZN8chVg+UNxTm4s6REl"
-    "7Y9yZwJnlJnj3k2b1yDAzq9xHaf0DBsU2241LXijaFS7mTS48Hip51+2V1y9H0KAV7J9"
-    "WgBdpsZVWgeI+2Ws+zYBa5jnO0oL1yQXJeWpruZWKBN5vof80t9BbeEeVNCGYYkiUoNQ"
-    "2+ptWmC0x6m78bGoPbQTzSaumMJS/Jilz4NVuqcE6dEYsh63eXf87pU8Wn6EM3+lkVxp"
-    "94cxqH1VUyiiMVu3Hau28U+bhs0bFFor3V34WFZ7DEiyT056jJPmxKvaAlP/m1QL1WV5"
-    "LGsJzTpfkYAMyfiVyUpth8rLpil834dqoz+9GanpJeo5ZNUyHh6pmZQnUbBtSCqdgCsf"
-    "63qGC2q01JnfNZMnTvSdFYI69CZNSVd1s2djYa9Q02c8Dj3hUhfvbRiRSFOYqupQHO32"
-    "jpEq85hG/Q/0k6uTchxM4xu8aLuQDxnbwhAODKFSEhQcSJnXEvRVT0NrMat7VivuP3sv"
-    "olK2cF0fp0hNcJqCN+0KknYelLPlfg/t0jVPm2pusDzzyw8wuMp5lFtJIf1FyMvZ+UIk"
-    "DVCdnITW5aZ5lISTs2kaQbS95cdnL/eTZhFoJBA1S5lyCWhtUzjbIxOQy+tPy6+7hhrq"
-    "lDBSNdSI3PWM1tVLi+V7IU+Du9z7w7wcy5geD2pbk9fdpDgpNZmpeUrXKDIWN2ndq4sG"
-    "05DBKZkkNY8mMeYcjukd/a7nH1GjblY="
+    "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"
 )
 PAL_4732 = (
     "ppbpppbppppbbppbbpppbppppbbppbbppbppppbbpppbbppbbppppbbppbpb"
@@ -2170,11 +2172,11 @@ def test_palindromic_ceiling_attained_grandsire_triples():
 
 def test_palindromic_touch_exists_every_mid_length_grandsire_triples():
     # Existence across the middle of the spectrum: decode one witness
-    # per lead count L in [74, 304] plus 315 and verify each
+    # per lead count L in [74, 304] plus 315 and 335, verify each
     # end-to-end. With PAL_SPECTRUM nonzero for 17..73, the 337 sweep
     # census and the 338/339 extremal witnesses, palindromic
     # bobs-only touches exist for every L in [17, 304] and at 315,
-    # 337, 338, 339. Unknown: [305, 314] and [316, 336].
+    # 335, 337, 338, 339. Unknown: [305, 314], [316, 334], 336.
     lines = zlib.decompress(
         base64.b64decode(PAL_MID_WITNESSES_BLOB)
     ).decode()
@@ -2182,7 +2184,7 @@ def test_palindromic_touch_exists_every_mid_length_grandsire_triples():
     for line in lines.splitlines():
         ls, half = line.split(":")
         wit[int(ls)] = half
-    assert sorted(wit) == list(range(74, 305)) + [315]
+    assert sorted(wit) == list(range(74, 305)) + [315, 335]
     m = rings.find_method("Grandsire Triples")
     for L, s in wit.items():
         full = s + s[::-1] if L % 2 == 0 else s + s[:-1][::-1]
