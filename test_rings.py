@@ -64,17 +64,18 @@ PAL_SPECTRUM = {
     70: 1114398, 71: 1873549, 72: 1788940, 73: 2964173,
 }
 # One palindromic bobs-only touch of Grandsire Triples for EVERY lead
-# count L in [74, 313] plus L = 315, 316 and 335, found by randomized
-# mirror-DFS with restarts (/tmp/palfind.c and the lookahead-ordered
-# /tmp/palfind2.c, 2026-07-23/25: survival-ordered branching cracked
-# 305/306 in under 1G nodes after plain random order failed at 14G,
-# then 307-313 and 316 overnight, the worst at 127G nodes) and, for
-# 335, by the family-B sweep (/tmp/pal335.py, 2026-07-24/25: 15
-# family-B complements, EXACTLY 8080 single-cycle settings). Together
-# with PAL_SPECTRUM (exact, nonzero for L = 17..73) and the
-# 337/338/339 witnesses above, palindromic touches exist for every L
-# in [17, 313] and at 315, 316, 335, 337, 338, 339; the open ground
-# is 314, [317, 334] and 336.
+# count L in [74, 313] plus L = 315, 316, 333 and 335, found by
+# randomized mirror-DFS with restarts (/tmp/palfind.c and the
+# lookahead-ordered /tmp/palfind2.c, 2026-07-23/25: survival-ordered
+# branching cracked 305/306 in under 1G nodes after plain random
+# order failed at 14G, then 307-313 and 316 overnight, the worst at
+# 127G nodes) and, for 333/335, by family-B-only sweeps
+# (/tmp/pal335.py: 15 complements, EXACTLY 8080 single-cycle
+# settings; /tmp/pal333.py: 185 complements, first config alone gave
+# 231). Together with PAL_SPECTRUM (exact, nonzero for L = 17..73)
+# and the 337/338/339 witnesses above, palindromic touches exist for
+# every L in [17, 313] and at 315, 316, 333, 335, 337, 338, 339; the
+# open ground is 314, [317, 332], 334 and 336.
 # Encoding: zlib+base64 of "L:half" lines; even L reconstructs as
 # s + reversed(s), odd L (half includes the fixed center call) as
 # s + reversed(s[:-1]).
@@ -164,8 +165,8 @@ PAL_MID_WITNESSES_BLOB = (
     "NobTAkVzCfQ9CFc9UE4c80Xhy6d2qaSUim9nWT2jvJlY/3lAwNQLlcmxdKszxjeF2ImU"
     "FyrLmE99DU/DFX7ljv+FLaNY5THAOSgfQK9kWURS9o0ovGCllJ0wA+Weoe+XZAxwCSla"
     "ZOG/fczMva/k4mz3Dr0U18hjeCeKWiatSnBcXZpUXUqeX8GrkS24cMBU9v/Cr2V6RpES"
-    "WBbPHSB+h5OfoJC4MO2V96r2bpj+lvcLmuXqCuVUs8GRT9ky+DKKPmeQWDCksqp/alpD"
-    "hA=="
+    "WBbPHSB+h5OfoJC4MO2V96r2bpj+lmUJW4bs0v55xfk6bkFcrzyO44hcf+QPo/1+7bNc"
+    "DaTcQDaO8ilbsl9GfeiMJ4ubVAL2DxTkif8="
 )
 PAL_4732 = (
     "ppbpppbppppbbppbbpppbppppbbppbbppbppppbbpppbbppbbppppbbppbpb"
@@ -2184,11 +2185,12 @@ def test_palindromic_ceiling_attained_grandsire_triples():
 
 def test_palindromic_touch_exists_every_mid_length_grandsire_triples():
     # Existence across the middle of the spectrum: decode one witness
-    # per lead count L in [74, 313] plus 315, 316 and 335, verify each
-    # end-to-end. With PAL_SPECTRUM nonzero for 17..73, the 337 sweep
-    # census and the 338/339 extremal witnesses, palindromic
-    # bobs-only touches exist for every L in [17, 313] and at 315,
-    # 316, 335, 337, 338, 339. Unknown: 314, [317, 334], 336.
+    # per lead count L in [74, 313] plus 315, 316, 333 and 335,
+    # verify each end-to-end. With PAL_SPECTRUM nonzero for 17..73,
+    # the 337 sweep census and the 338/339 extremal witnesses,
+    # palindromic bobs-only touches exist for every L in [17, 313]
+    # and at 315, 316, 333, 335, 337, 338, 339. Unknown: 314,
+    # [317, 332], 334, 336.
     lines = zlib.decompress(
         base64.b64decode(PAL_MID_WITNESSES_BLOB)
     ).decode()
@@ -2196,7 +2198,7 @@ def test_palindromic_touch_exists_every_mid_length_grandsire_triples():
     for line in lines.splitlines():
         ls, half = line.split(":")
         wit[int(ls)] = half
-    assert sorted(wit) == list(range(74, 314)) + [315, 316, 335]
+    assert sorted(wit) == list(range(74, 314)) + [315, 316, 333, 335]
     m = rings.find_method("Grandsire Triples")
     for L, s in wit.items():
         full = s + s[::-1] if L % 2 == 0 else s + s[:-1][::-1]
