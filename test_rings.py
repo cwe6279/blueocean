@@ -202,9 +202,12 @@ PAL_4732 = (
 # 2026-07-27) EXACTLY 12504; at L=332 (308 complements, three cross
 # pairs, 207 of them nonzero, 2026-07-28) EXACTLY 45798; at L=331
 # (MITM enumeration CAPPED at 400 complements, 266 nonzero,
-# 2026-07-28) AT LEAST 52373. Top-of-spectrum counts, family B alone
+# 2026-07-28) AT LEAST 52373; at L=330 (CAPPED at 400, 282 nonzero,
+# 2026-07-29) AT LEAST 33702; at L=329 (CAPPED at 400, 274 nonzero,
+# 2026-07-29) AT LEAST 43265. Top-of-spectrum counts, family B alone
 # below 337: 135 (339), 226 (338), 1199 (337), 1616 (336),
-# 8080 (335), 12504 (334), 36238 (333), 45798 (332), >=52373 (331).
+# 8080 (335), 12504 (334), 36238 (333), 45798 (332), >=52373 (331),
+# >=33702 (330), >=43265 (329).
 PAL_4718 = (
     "bpbpppbbpbppbbpbppppbbpbpbppbppppbpbbpppbbppppbbpbbpppbbppbp"
     "bppbbppbbppppbbpbbpppbpppbpbbppbpbpbppppbbpppbbppbpbppbppppb"
