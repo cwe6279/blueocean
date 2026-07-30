@@ -85,10 +85,12 @@ PAL_SPECTRUM = {
 # at 400 configs, cfg329_0 alone has 120 settings, 2026-07-28;
 # /tmp/pal328.py: even L, 6 heads + FIVE MITM cross pairs on the
 # pairs x triples join, capped at 400 configs, cfg328_0 alone has
-# 223 settings, 2026-07-29). Together with
+# 223 settings, 2026-07-29; /tmp/pal327.py: odd L, 7 heads + SIX
+# cross pairs, MITM triples x triples join, capped at 400 configs,
+# cfg327_0 alone has 83 settings, 2026-07-30). Together with
 # PAL_SPECTRUM (exact, nonzero for L = 17..73) and the 337/338/339
 # witnesses above, palindromic touches exist for every L in
-# [17, 316] and [328, 339]; the open ground is exactly [317, 327].
+# [17, 316] and [327, 339]; the open ground is exactly [317, 326].
 # Encoding: zlib+base64 of "L:half" lines; even L reconstructs as
 # s + reversed(s), odd L (half includes the fixed center call) as
 # s + reversed(s[:-1]).
@@ -178,12 +180,12 @@ PAL_MID_WITNESSES_BLOB = (
     "hdgYTgsUzSXQ9yBc9UA5ccwXhS+f2qWSUiq+nWX1jPJmYv3nAQFTL1Qmx9KtzhjfFGIn"
     "Ul6oLGM+9TU8DVf4lTv+F7aMYpXHAOegfAC9kmURSdk3ovCClVJ2wgyUe4a+X5IxwCWk"
     "aJGF//YxM/e+kouz3Tv0Ulwjj+GdKGqZHsFEK0PNNGoFrbgQBs06K9ZF64ssnF1eJq2b"
-    "cGximmRiihJB4bURVriAxbw98AsQl+kVRVpl2V53xPmlUH4kQyLXtEbJ6+676bwtc8fx"
-    "Kv6+BKMqXjU0qLjra4uZZjPaxR4D3UNIMUKenlhSxtpUB+dVmbpS4wapdybntiz3sBSW"
-    "vWkXz9xffNRAXw3TixOJ5V5h+xtpp3tSa0TSPDbpXju5CILSPjYnzCYpjrjk+xjqHCbd"
-    "XD5QuwSLFyeOyYL0//0KTdyYopQx1CXs2wNO65NXiR5HKMrRkBexXPbG+7nDiC6PMAS0"
-    "JKOMLkCd5f/UJ279r3KKJjL8rOsz3No5iMDoTQfp3hQpI4++OjncLBrsMdhXuOI9BVaa"
-    "BS//hsXVZJ2I82I5/Mr+A4cStrU="
+    "cGximmRiihJB4bURVriAxbw98AsQl+kVRVpl2V53xPmlUH4kQyLXtEbJ6+676bwt8xqX"
+    "mhWHdEX4VvLIY0oJrZxoAR2kEBRANQbaAw5VqV+iZlXZGr5WcMW1aU9zapoFGgPdQ9g7"
+    "gsieAVNq3ZQx51U9vXL4JqTolNNtWe5huTZrEi7e47/4qMHoyicUZzzLPRf3N9LOS6UW"
+    "s6R5FdM9y3IRraV9FU8oWJJGcW36MdQ5TF68fER5iWovThyzGun/QxuaYTLVM2OoS9hH"
+    "EpwoKa8yUo75lKMhT3e5NJN3yIe1Xx5hmHLJmhkBg3r1/8lk3PpfJT9NCPtZ12e4tXNY"
+    "hmGmDtI9flJGx311crhZ9CxjsK9wVYaKADVdX/6xjavJOrXpxXL4lf0HKl38Gw=="
 )
 PAL_4732 = (
     "ppbpppbppppbbppbbpppbppppbbppbbppbppppbbpppbbppbbppppbbppbpb"
@@ -208,10 +210,11 @@ PAL_4732 = (
 # 2026-07-28) AT LEAST 52373; at L=330 (CAPPED at 400, 282 nonzero,
 # 2026-07-29) AT LEAST 33702; at L=329 (CAPPED at 400, 274 nonzero,
 # 2026-07-29) AT LEAST 43265; at L=328 (CAPPED at 400, 273 nonzero,
-# 2026-07-29) AT LEAST 28517. Top-of-spectrum counts, family B alone
+# 2026-07-29) AT LEAST 28517; at L=327 (CAPPED at 400, 291 nonzero,
+# 2026-07-30) AT LEAST 31544. Top-of-spectrum counts, family B alone
 # below 337: 135 (339), 226 (338), 1199 (337), 1616 (336),
 # 8080 (335), 12504 (334), 36238 (333), 45798 (332), >=52373 (331),
-# >=33702 (330), >=43265 (329), >=28517 (328).
+# >=33702 (330), >=43265 (329), >=28517 (328), >=31544 (327).
 PAL_4718 = (
     "bpbpppbbpbppbbpbppppbbpbpbppbppppbpbbpppbbppppbbpbbpppbbppbp"
     "bppbbppbbppppbbpbbpppbpppbpbbppbpbpbppppbbpppbbppbpbppbppppb"
@@ -2213,11 +2216,11 @@ def test_palindromic_ceiling_attained_grandsire_triples():
 
 def test_palindromic_touch_exists_every_mid_length_grandsire_triples():
     # Existence across the middle of the spectrum: decode one witness
-    # per lead count L in [74, 316] plus 328-336, verify each
+    # per lead count L in [74, 316] plus 327-336, verify each
     # end-to-end. With PAL_SPECTRUM nonzero for 17..73, the 337
     # sweep census and the 338/339 extremal witnesses, palindromic
     # bobs-only touches exist for every L in [17, 316] and
-    # [328, 339]. Unknown: exactly [317, 327].
+    # [327, 339]. Unknown: exactly [317, 326].
     lines = zlib.decompress(
         base64.b64decode(PAL_MID_WITNESSES_BLOB)
     ).decode()
@@ -2225,7 +2228,7 @@ def test_palindromic_touch_exists_every_mid_length_grandsire_triples():
     for line in lines.splitlines():
         ls, half = line.split(":")
         wit[int(ls)] = half
-    assert sorted(wit) == list(range(74, 317)) + list(range(328, 337))
+    assert sorted(wit) == list(range(74, 317)) + list(range(327, 337))
     m = rings.find_method("Grandsire Triples")
     for L, s in wit.items():
         full = s + s[::-1] if L % 2 == 0 else s + s[:-1][::-1]
