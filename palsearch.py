@@ -218,10 +218,11 @@ def family_b_complements(g, L):
                     }
 
 
-def sweep(g, L, options, cap=None):
+def sweep(g, L, options, cap=None, limit=None):
     """Iterate free-bit settings of one complement; yield the calling
-    string of every single-cycle F.  Stops after `cap` hits."""
-    found = 0
+    string of every single-cycle F.  Stops after `cap` hits or after
+    examining `limit` settings."""
+    found = tried = 0
     fixed_calls = {}
     free = []
     for ms in options:
@@ -230,6 +231,9 @@ def sweep(g, L, options, cap=None):
         else:
             free.append([d for d, _ in ms])
     for combo in itertools.product(*free):
+        tried += 1
+        if limit is not None and tried > limit:
+            return
         calls = dict(fixed_calls)
         for d in combo:
             calls.update(d)
