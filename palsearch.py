@@ -223,31 +223,40 @@ def sweep(g, L, options, cap=None, limit=None):
     string of every single-cycle F.  Stops after `cap` hits or after
     examining `limit` settings."""
     found = tried = 0
-    fixed_calls = {}
+    succ = [-1] * g.n
+    call_of = [""] * g.n
     free = []
     for ms in options:
         if len(ms) == 1:
-            fixed_calls.update(ms[0][0])
+            for v, c in ms[0][0].items():
+                succ[v] = g.FP[v] if c == "p" else g.FB[v]
+                call_of[v] = c
         else:
-            free.append([d for d, _ in ms])
+            free.append([
+                [(v, g.FP[v] if c == "p" else g.FB[v], c)
+                 for v, c in d.items()]
+                for d, _ in ms
+            ])
+    r = g.r
     for combo in itertools.product(*free):
         tried += 1
         if limit is not None and tried > limit:
             return
-        calls = dict(fixed_calls)
-        for d in combo:
-            calls.update(d)
-        v, steps = g.r, 0
+        for patch in combo:
+            for v, s, c in patch:
+                succ[v] = s
+                call_of[v] = c
+        v, steps = r, 0
         while True:
-            v = g.FP[v] if calls[v] == "p" else g.FB[v]
+            v = succ[v]
             steps += 1
-            if v == g.r or steps > L:
+            if v == r or steps > L:
                 break
-        if v == g.r and steps == L:
-            out, v = [], g.r
+        if v == r and steps == L:
+            out, v = [], r
             for _ in range(L):
-                out.append(calls[v])
-                v = g.FP[v] if calls[v] == "p" else g.FB[v]
+                out.append(call_of[v])
+                v = succ[v]
             yield "".join(out)
             found += 1
             if cap is not None and found >= cap:
