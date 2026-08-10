@@ -2390,6 +2390,30 @@ def test_palindromic_touch_census_small_grandsire_triples():
         assert rows[-1] == r and len(rows) == 14 * len(w) + 1
 
 
+def test_palsearch_reconstruction_matches_recorded_counts():
+    # palsearch.py (rebuilt 2026-08-10 after the reboot wiped every
+    # /tmp solver) must keep reproducing the complement counts the
+    # original sweeps recorded: 1 family-B complement at L = 339 and
+    # 338, 3 at 337, 6 at 336, 15 at 335, 44 at 334 (and 185 at 333,
+    # skipped here for speed).
+    import palsearch
+
+    g = palsearch.build()
+    for L, want in ((339, 1), (338, 1), (337, 3), (336, 6),
+                    (335, 15), (334, 44)):
+        got = sum(1 for _ in palsearch.family_b_complements(g, L))
+        assert got == want, (L, got, want)
+    # and the sweep still finds a real touch: first hit at L = 336,
+    # verified end-to-end (true, closes at rounds, palindromic)
+    for D, options, meta in palsearch.family_b_complements(g, 336):
+        hits = list(palsearch.sweep(g, 336, options, cap=1))
+        if hits:
+            assert palsearch.verify(g, hits[0])
+            break
+    else:
+        raise AssertionError("no single-cycle setting found at 336")
+
+
 def _mu_matchings(verts, MUP, MUB):
     if not verts:
         return 1
