@@ -156,6 +156,53 @@ def xor_table(g, k):
     return table
 
 
+def _pairs_dict(g):
+    """(keys, masks, dict XOR-mask -> list of index pairs) over the
+    136 cross comp-pair keys; built once."""
+    if not hasattr(g, "_pd"):
+        keys = sorted(g.cross, key=sorted)
+        mask = [sum(1 << c for c in key) for key in keys]
+        pd = {}
+        for i in range(len(keys) - 1):
+            mi = mask[i]
+            for j in range(i + 1, len(keys)):
+                pd.setdefault(mi ^ mask[j], []).append((i, j))
+        g._pd = (keys, mask, pd)
+    return g._pd
+
+
+def ksubsets(g, k, target):
+    """All k-subsets of the cross comp-pair keys XOR-ing (as sets of
+    hit 10-components) to `target`.  Full table for k <= 3; k = 4 by
+    meet-in-the-middle over pair XORs (C(136,4) ~ 13.6M would not fit
+    in RAM as a table).  Each quad arises from three pair-splittings,
+    deduped via canonical sorted tuples."""
+    if k <= 3:
+        return xor_table(g, k).get(target, [])
+    assert k == 4, "k >= 5 needs the palmitm joins"
+    keys, mask, pd = _pairs_dict(g)
+    tm = 0
+    for c in target:
+        tm |= 1 << c
+    out = set()
+    for x, ps in pd.items():
+        y = tm ^ x
+        if y < x:
+            continue
+        qs = pd.get(y)
+        if not qs:
+            continue
+        if y == x:
+            combos = [(p, q) for ii, p in enumerate(ps)
+                      for q in ps[ii + 1:]]
+        else:
+            combos = [(p, q) for p in ps for q in qs]
+        for (a, b), (c, d) in combos:
+            if a != c and a != d and b != c and b != d:
+                out.add(tuple(sorted((a, b, c, d))))
+    return [[keys[i] for i in quad] for quad in sorted(out)]
+
+
 def family_b_complements(g, L):
     """Yield family-B complements for lead count L as
     (D frozenset, options list-of-matching-lists, meta dict).
@@ -185,7 +232,7 @@ def family_b_complements(g, L):
                 target = tog
                 for h in hs:
                     target ^= {g.comp_id[h]}
-                for pairs in xor_table(g, k).get(target, []):
+                for pairs in ksubsets(g, k, target):
                     D = set(hs)
                     for ci, p in zip(hit, pos):
                         w = g.paths[ci][p]
@@ -263,6 +310,79 @@ def sweep(g, L, options, cap=None, limit=None):
                 return
 
 
+def _census_bin():
+    """Compile palcensus.c (once) and return the binary path."""
+    import os
+    import subprocess
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    src = os.path.join(here, "palcensus.c")
+    exe = "/tmp/palcensus"
+    if (not os.path.exists(exe)
+            or os.path.getmtime(exe) < os.path.getmtime(src)):
+        subprocess.run(["gcc", "-O2", "-o", exe, src], check=True)
+    return exe
+
+
+def _count_settings_c(g, L, options, exe):
+    """Count single-cycle settings of one complement via the C
+    sweeper.  Same semantics as len(list(sweep(g, L, options)))."""
+    import subprocess
+
+    base = [-1] * g.n
+    free = []
+    for ms in options:
+        opts = [
+            sorted((v, g.FP[v] if c == "p" else g.FB[v])
+                   for v, c in d.items())
+            for d, _ in ms
+        ]
+        if len(ms) == 1:
+            for v, s in opts[0]:
+                base[v] = s
+        else:
+            assert len(ms) <= 16 and len(opts[0]) <= 12
+            free.append(opts)
+    lines = [f"{L} {g.r}", " ".join(map(str, base)), str(len(free))]
+    for opts in free:
+        lines.append(f"{len(opts)} {len(opts[0])}")
+        for patch in opts:
+            lines.extend(f"{v} {s}" for v, s in patch)
+    out = subprocess.run([exe], input="\n".join(lines) + "\n",
+                         capture_output=True, text=True, check=True)
+    return int(out.stdout)
+
+
+def census(g, L, log=None, use_c=True):
+    """Exact census: sweep EVERY family-B complement of L uncapped,
+    return (total single-cycle settings, complement count, nonzero
+    complement count).  Progress lines to `log` (a writable stream).
+    With use_c the per-complement count runs in the compiled C
+    sweeper (~40x); the pure-Python sweep is the fallback."""
+    import time
+
+    exe = _census_bin() if use_c else None
+    t0 = time.time()
+    total = ncfg = nonzero = 0
+    for D, options, meta in family_b_complements(g, L):
+        ncfg += 1
+        if exe:
+            n = _count_settings_c(g, L, options, exe)
+        else:
+            n = sum(1 for _ in sweep(g, L, options))
+        total += n
+        if n:
+            nonzero += 1
+        if log:
+            print(f"cfg{ncfg} {n} total={total} "
+                  f"({time.time()-t0:.0f}s)", file=log, flush=True)
+    if log:
+        print(f"L={L} census EXACT {total} over {ncfg} complements "
+              f"({nonzero} nonzero) in {time.time()-t0:.0f}s",
+              file=log, flush=True)
+    return total, ncfg, nonzero
+
+
 def verify(g, calling):
     """End-to-end check: true, closes at rounds, palindromic, right
     length."""
@@ -279,6 +399,10 @@ if __name__ == "__main__":
     import sys
 
     g = build()
+    if sys.argv[1] == "census":
+        L = int(sys.argv[2])
+        census(g, L, log=sys.stdout)
+        sys.exit(0)
     L = int(sys.argv[1])
     cap = int(sys.argv[2]) if len(sys.argv) > 2 else 1
     for D, options, meta in family_b_complements(g, L):
