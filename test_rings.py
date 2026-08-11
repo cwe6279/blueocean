@@ -2415,6 +2415,11 @@ def test_palsearch_reconstruction_matches_recorded_counts():
             break
     else:
         raise AssertionError("no single-cycle setting found at 336")
+    # and the exact-census path (C sweeper over the full free-bit
+    # product, 2026-08-11) reproduces the recorded top-end census:
+    # EXACTLY 226 touches at L = 338, from its single complement.
+    # The same machinery re-derived 1616 at 336 and 8080 at 335.
+    assert palsearch.census(g, 338) == (226, 1, 1)
 
 
 def _mu_matchings(verts, MUP, MUB):
