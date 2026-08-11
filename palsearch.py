@@ -171,36 +171,65 @@ def _pairs_dict(g):
     return g._pd
 
 
+def _triples_dict(g):
+    """dict XOR-mask -> list of index triples (C(136,3) = 410k)."""
+    if not hasattr(g, "_td"):
+        keys, mask, pd = _pairs_dict(g)
+        td = {}
+        n = len(keys)
+        for i in range(n - 2):
+            mi = mask[i]
+            for j in range(i + 1, n - 1):
+                mj = mi ^ mask[j]
+                for l in range(j + 1, n):
+                    td.setdefault(mj ^ mask[l], []).append((i, j, l))
+        g._td = td
+    return g._td
+
+
 def ksubsets(g, k, target):
     """All k-subsets of the cross comp-pair keys XOR-ing (as sets of
-    hit 10-components) to `target`.  Full table for k <= 3; k = 4 by
-    meet-in-the-middle over pair XORs (C(136,4) ~ 13.6M would not fit
-    in RAM as a table).  Each quad arises from three pair-splittings,
-    deduped via canonical sorted tuples."""
+    hit 10-components) to `target`.  Full table for k <= 3; k = 4/5
+    by meet-in-the-middle over int bitmasks (pairs x pairs, pairs x
+    triples — C(136,4) ~ 13.6M as a table would not fit in RAM).
+    Each k-set arises from several splittings, deduped via canonical
+    sorted tuples."""
     if k <= 3:
         return xor_table(g, k).get(target, [])
-    assert k == 4, "k >= 5 needs the palmitm joins"
+    assert k in (4, 5), "k >= 6 needs the palmitm joins"
     keys, mask, pd = _pairs_dict(g)
     tm = 0
     for c in target:
         tm |= 1 << c
     out = set()
-    for x, ps in pd.items():
-        y = tm ^ x
-        if y < x:
-            continue
-        qs = pd.get(y)
-        if not qs:
-            continue
-        if y == x:
-            combos = [(p, q) for ii, p in enumerate(ps)
-                      for q in ps[ii + 1:]]
-        else:
-            combos = [(p, q) for p in ps for q in qs]
-        for (a, b), (c, d) in combos:
-            if a != c and a != d and b != c and b != d:
-                out.add(tuple(sorted((a, b, c, d))))
-    return [[keys[i] for i in quad] for quad in sorted(out)]
+    if k == 4:
+        for x, ps in pd.items():
+            y = tm ^ x
+            if y < x:
+                continue
+            qs = pd.get(y)
+            if not qs:
+                continue
+            if y == x:
+                combos = [(p, q) for ii, p in enumerate(ps)
+                          for q in ps[ii + 1:]]
+            else:
+                combos = [(p, q) for p in ps for q in qs]
+            for (a, b), (c, d) in combos:
+                if a != c and a != d and b != c and b != d:
+                    out.add(tuple(sorted((a, b, c, d))))
+    else:
+        td = _triples_dict(g)
+        for x, ps in pd.items():
+            qs = td.get(tm ^ x)
+            if not qs:
+                continue
+            for a, b in ps:
+                for c, d, e in qs:
+                    if (a != c and a != d and a != e
+                            and b != c and b != d and b != e):
+                        out.add(tuple(sorted((a, b, c, d, e))))
+    return [[keys[i] for i in ks] for ks in sorted(out)]
 
 
 def family_b_complements(g, L):
