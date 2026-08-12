@@ -232,8 +232,9 @@ PAL_4732 = (
 # EXACTLY 36238; at L=334 (44 complements, two cross pairs,
 # 2026-07-27) EXACTLY 12504; at L=332 (308 complements, three cross
 # pairs, 207 of them nonzero, 2026-07-28) EXACTLY 45798; at L=331
-# (MITM enumeration CAPPED at 400 complements, 266 nonzero,
-# 2026-07-28) AT LEAST 52373; at L=330 (CAPPED at 400, 282 nonzero,
+# (uncapped k=4 MITM enumeration, 752 complements, 517 nonzero,
+# C sweeper, 2026-08-12) EXACTLY 111526 — more than double the old
+# 400-config capped bound >=52373; at L=330 (CAPPED at 400, 282 nonzero,
 # 2026-07-29) AT LEAST 33702; at L=329 (CAPPED at 400, 274 nonzero,
 # 2026-07-29) AT LEAST 43265; at L=328 (CAPPED at 400, 273 nonzero,
 # 2026-07-29) AT LEAST 28517; at L=327 (CAPPED at 400, 291 nonzero,
@@ -246,7 +247,7 @@ PAL_4732 = (
 # 2026-08-01) AT LEAST 5439; at L=320 (CAPPED at 400, 217 nonzero,
 # 2026-08-01) AT LEAST 7371. Top-of-spectrum counts, family B alone
 # below 337: 135 (339), 226 (338), 1199 (337), 1616 (336),
-# 8080 (335), 12504 (334), 36238 (333), 45798 (332), >=52373 (331),
+# 8080 (335), 12504 (334), 36238 (333), 45798 (332), 111526 (331),
 # >=33702 (330), >=43265 (329), >=28517 (328), >=31544 (327),
 # >=40008 (326), >=26865 (325), >=20019 (324), >=12941 (323),
 # >=14452 (322), >=5439 (321), >=7371 (320).
@@ -2418,7 +2419,11 @@ def test_palsearch_reconstruction_matches_recorded_counts():
     # and the exact-census path (C sweeper over the full free-bit
     # product, 2026-08-11) reproduces the recorded top-end census:
     # EXACTLY 226 touches at L = 338, from its single complement.
-    # The same machinery re-derived 1616 at 336 and 8080 at 335.
+    # The same machinery re-derived 1616 at 336, 8080 at 335, and
+    # 36238/185 at 333, then produced the first-ever uncapped deep
+    # census: EXACTLY 111526 at L = 331 over 752 complements (517
+    # nonzero, 2026-08-12), beating the capped bound >=52373 — a
+    # completeness check on the k=4 MITM enumeration.
     assert palsearch.census(g, 338) == (226, 1, 1)
 
 
