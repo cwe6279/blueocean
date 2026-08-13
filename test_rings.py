@@ -236,8 +236,10 @@ PAL_4732 = (
 # C sweeper, 2026-08-12) EXACTLY 111526 — more than double the old
 # 400-config capped bound >=52373; at L=330 (uncapped, 1665
 # complements, 988 nonzero, 2026-08-12) EXACTLY 136480 — four times
-# the capped bound >=33702; at L=329 (CAPPED at 400, 274 nonzero,
-# 2026-07-29) AT LEAST 43265; at L=328 (CAPPED at 400, 273 nonzero,
+# the capped bound >=33702; at L=329 (uncapped k=5 MITM, 3445
+# complements, 2262 nonzero, 2026-08-13) EXACTLY 361722 — more than
+# eight times the capped bound >=43265; at L=328 (CAPPED at 400,
+# 273 nonzero,
 # 2026-07-29) AT LEAST 28517; at L=327 (CAPPED at 400, 291 nonzero,
 # 2026-07-30) AT LEAST 31544; at L=326 (CAPPED at 400, 324 nonzero,
 # 2026-07-31) AT LEAST 40008; at L=325 (CAPPED at 400, 296 nonzero,
@@ -249,7 +251,7 @@ PAL_4732 = (
 # 2026-08-01) AT LEAST 7371. Top-of-spectrum counts, family B alone
 # below 337: 135 (339), 226 (338), 1199 (337), 1616 (336),
 # 8080 (335), 12504 (334), 36238 (333), 45798 (332), 111526 (331),
-# 136480 (330), >=43265 (329), >=28517 (328), >=31544 (327),
+# 136480 (330), 361722 (329), >=28517 (328), >=31544 (327),
 # >=40008 (326), >=26865 (325), >=20019 (324), >=12941 (323),
 # >=14452 (322), >=5439 (321), >=7371 (320).
 PAL_4718 = (
@@ -2427,6 +2429,10 @@ def test_palsearch_reconstruction_matches_recorded_counts():
     # completeness check on the k=4 MITM enumeration. Same day:
     # EXACTLY 136480 at L = 330 (1665 complements, 988 nonzero) and
     # a digit-for-digit 332 re-validation (45798/308, 207 nonzero).
+    # The first k=5 (pairs x triples MITM) census landed 2026-08-13:
+    # EXACTLY 361722 at L = 329 over 3445 complements (2262 nonzero,
+    # 3270s), 8.4x the capped bound >=43265 — a completeness check
+    # on the k=5 enumeration path.
     assert palsearch.census(g, 338) == (226, 1, 1)
 
 
