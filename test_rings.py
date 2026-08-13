@@ -2434,6 +2434,31 @@ def test_palsearch_reconstruction_matches_recorded_counts():
     # 3270s), 8.4x the capped bound >=43265 — a completeness check
     # on the k=5 enumeration path.
     assert palsearch.census(g, 338) == (226, 1, 1)
+    # ksubsets k=6 (triples x triples MITM, 2026-08-13, unblocking
+    # the 327/326 censuses) fold-checked against the independent
+    # k=5-extension path: extend every k=5 solution of
+    # target ^ key[i] by key[i] and dedup — the two enumerations
+    # must agree exactly (they did on 3 random 6-set targets at
+    # build time; one is pinned here).
+    import random
+
+    keys = sorted(g.cross, key=sorted)
+    kidx = {key: i for i, key in enumerate(keys)}
+    rng = random.Random(6)
+    combo = rng.sample(range(len(keys)), 6)
+    target = frozenset()
+    for i in combo:
+        target ^= keys[i]
+    got6 = {tuple(sorted(kidx[key] for key in ks))
+            for ks in palsearch.ksubsets(g, 6, target)}
+    assert tuple(sorted(combo)) in got6
+    alt = set()
+    for i in range(len(keys)):
+        for ks in palsearch.ksubsets(g, 5, target ^ keys[i]):
+            idx = tuple(sorted(kidx[key] for key in ks))
+            if i not in idx:
+                alt.add(tuple(sorted(idx + (i,))))
+    assert got6 == alt and len(got6) == 53
 
 
 def _mu_matchings(verts, MUP, MUB):

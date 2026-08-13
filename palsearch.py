@@ -189,14 +189,14 @@ def _triples_dict(g):
 
 def ksubsets(g, k, target):
     """All k-subsets of the cross comp-pair keys XOR-ing (as sets of
-    hit 10-components) to `target`.  Full table for k <= 3; k = 4/5
+    hit 10-components) to `target`.  Full table for k <= 3; k = 4/5/6
     by meet-in-the-middle over int bitmasks (pairs x pairs, pairs x
-    triples — C(136,4) ~ 13.6M as a table would not fit in RAM).
-    Each k-set arises from several splittings, deduped via canonical
-    sorted tuples."""
+    triples, triples x triples — C(136,4) ~ 13.6M as a table would
+    not fit in RAM).  Each k-set arises from several splittings,
+    deduped via canonical sorted tuples."""
     if k <= 3:
         return xor_table(g, k).get(target, [])
-    assert k in (4, 5), "k >= 6 needs the palmitm joins"
+    assert k in (4, 5, 6), "k >= 7 needs the palmitm joins"
     keys, mask, pd = _pairs_dict(g)
     tm = 0
     for c in target:
@@ -218,7 +218,7 @@ def ksubsets(g, k, target):
             for (a, b), (c, d) in combos:
                 if a != c and a != d and b != c and b != d:
                     out.add(tuple(sorted((a, b, c, d))))
-    else:
+    elif k == 5:
         td = _triples_dict(g)
         for x, ps in pd.items():
             qs = td.get(tm ^ x)
@@ -229,6 +229,26 @@ def ksubsets(g, k, target):
                     if (a != c and a != d and a != e
                             and b != c and b != d and b != e):
                         out.add(tuple(sorted((a, b, c, d, e))))
+    else:
+        td = _triples_dict(g)
+        for x, ps in td.items():
+            y = tm ^ x
+            if y < x:
+                continue
+            qs = td.get(y)
+            if not qs:
+                continue
+            if y == x:
+                combos = ((p, q) for ii, p in enumerate(ps)
+                          for q in ps[ii + 1:])
+            else:
+                combos = ((p, q) for p in ps for q in qs)
+            for p, q in combos:
+                if (p[0] != q[0] and p[0] != q[1] and p[0] != q[2]
+                        and p[1] != q[0] and p[1] != q[1]
+                        and p[1] != q[2] and p[2] != q[0]
+                        and p[2] != q[1] and p[2] != q[2]):
+                    out.add(tuple(sorted(p + q)))
     return [[keys[i] for i in ks] for ks in sorted(out)]
 
 
