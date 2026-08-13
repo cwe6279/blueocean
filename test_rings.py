@@ -2459,6 +2459,21 @@ def test_palsearch_reconstruction_matches_recorded_counts():
             if i not in idx:
                 alt.add(tuple(sorted(idx + (i,))))
     assert got6 == alt and len(got6) == 53
+    # ksubsets k=7 (triples x mask-sorted numpy quad array, 13.6M
+    # entries ~163MB, 2026-08-13, unblocking the 325/324 censuses)
+    # fold-checked the same way at build time: 2 random 7-set
+    # targets, exact agreement with the k=6-extension path (1522 and
+    # 6273 seven-sets).  Pinned here: the first target's seed combo
+    # and count (the full fold is ~20s, the count alone catches any
+    # enumeration drift).
+    rng7 = random.Random(7)
+    combo7 = rng7.sample(range(len(keys)), 7)
+    target7 = frozenset()
+    for i in combo7:
+        target7 ^= keys[i]
+    got7 = {tuple(sorted(kidx[key] for key in ks))
+            for ks in palsearch.ksubsets(g, 7, target7)}
+    assert tuple(sorted(combo7)) in got7 and len(got7) == 1522
 
 
 def _mu_matchings(verts, MUP, MUB):

@@ -187,16 +187,48 @@ def _triples_dict(g):
     return g._td
 
 
+def _quads_array(g):
+    """(sorted int64 mask array, parallel uint32 packed-index array)
+    over all C(136,4) ~ 13.6M quads of cross comp-pair keys — a dict
+    would not fit this box's RAM, a mask-sorted numpy array (12B per
+    entry, ~163MB) does.  Lookups via np.searchsorted."""
+    if not hasattr(g, "_qa"):
+        import numpy as np
+
+        keys, mask, pd = _pairs_dict(g)
+        n = len(keys)
+        total = n * (n - 1) * (n - 2) * (n - 3) // 24
+        qm = np.empty(total, dtype=np.int64)
+        qp = np.empty(total, dtype=np.uint32)
+        t = 0
+        for i in range(n - 3):
+            mi = mask[i]
+            for j in range(i + 1, n - 2):
+                mj = mi ^ mask[j]
+                pj = (i << 24) | (j << 16)
+                for l in range(j + 1, n - 1):
+                    ml = mj ^ mask[l]
+                    pl = pj | (l << 8)
+                    for m in range(l + 1, n):
+                        qm[t] = ml ^ mask[m]
+                        qp[t] = pl | m
+                        t += 1
+        assert t == total
+        order = np.argsort(qm, kind="stable")
+        g._qa = (qm[order], qp[order])
+    return g._qa
+
+
 def ksubsets(g, k, target):
     """All k-subsets of the cross comp-pair keys XOR-ing (as sets of
-    hit 10-components) to `target`.  Full table for k <= 3; k = 4/5/6
+    hit 10-components) to `target`.  Full table for k <= 3; k >= 4
     by meet-in-the-middle over int bitmasks (pairs x pairs, pairs x
-    triples, triples x triples — C(136,4) ~ 13.6M as a table would
-    not fit in RAM).  Each k-set arises from several splittings,
-    deduped via canonical sorted tuples."""
+    triples, triples x triples, triples x quads — the quad side as a
+    mask-sorted numpy array).  Each k-set arises from several
+    splittings, deduped via canonical sorted tuples."""
     if k <= 3:
         return xor_table(g, k).get(target, [])
-    assert k in (4, 5, 6), "k >= 7 needs the palmitm joins"
+    assert k in (4, 5, 6, 7), "k >= 8 needs quads x quads"
     keys, mask, pd = _pairs_dict(g)
     tm = 0
     for c in target:
@@ -229,7 +261,7 @@ def ksubsets(g, k, target):
                     if (a != c and a != d and a != e
                             and b != c and b != d and b != e):
                         out.add(tuple(sorted((a, b, c, d, e))))
-    else:
+    elif k == 6:
         td = _triples_dict(g)
         for x, ps in td.items():
             y = tm ^ x
@@ -249,6 +281,25 @@ def ksubsets(g, k, target):
                         and p[1] != q[2] and p[2] != q[0]
                         and p[2] != q[1] and p[2] != q[2]):
                     out.add(tuple(sorted(p + q)))
+    else:
+        import numpy as np
+
+        td = _triples_dict(g)
+        qm, qp = _quads_array(g)
+        tmasks = np.fromiter(td.keys(), dtype=np.int64, count=len(td))
+        want = tmasks ^ tm
+        lo = np.searchsorted(qm, want, side="left")
+        hi = np.searchsorted(qm, want, side="right")
+        for ps, l, h in zip(td.values(), lo, hi):
+            for pk in qp[l:h]:
+                pk = int(pk)
+                q = (pk >> 24, (pk >> 16) & 255, (pk >> 8) & 255,
+                     pk & 255)
+                qset = set(q)
+                for p in ps:
+                    if (p[0] not in qset and p[1] not in qset
+                            and p[2] not in qset):
+                        out.add(tuple(sorted(p + q)))
     return [[keys[i] for i in ks] for ks in sorted(out)]
 
 
